@@ -2,12 +2,12 @@
 
 set -e
 
-if [[ $(basename "${PWD}") != "volsync-operator-product-fbc" ]]; then
+if [[ $(basename "${PWD}") != "submariner-operator-product-fbc" ]]; then
   echo "error: Script must be run from the base of the repository."
   exit 1
 fi
 
-echo "Using drop version Volsync-Product map:"
+echo "Using drop version Submariner-Product map:"
 jq '.' drop-versions.json
 
 ocp_versions=$(jq -r 'keys[]' drop-versions.json)

@@ -1,4 +1,4 @@
-# File based catalog for the VolSync operator
+# File based catalog for the Submariner operator
 
 This is based on/copied from gatekeeper-operator-fbc
 
@@ -11,16 +11,16 @@ the catalog-template - then the next step (Adding or removing OCP versions) can 
 versions from older OCPs.
 
 Use the [build/fetch-catalog.sh](../build/fetch-catalog.sh) script to pulling from the OCP vX.Y
-index for the `volsync-product` operator package:
+index for the `submariner-product` operator package:
 
 ```bash
-./build/fetch-catalog.sh X.Y volsync-product
+./build/fetch-catalog.sh X.Y submariner-product
 ```
 
 ## Adding or removing OCP versions
 
 1. Update
-   [konflux-release-data](https://gitlab.cee.redhat.com/releng/konflux-release-data/-/tree/main/tenants-config/cluster/stone-prd-rh01/tenants/volsync-tenant),
+   [konflux-release-data](https://gitlab.cee.redhat.com/releng/konflux-release-data/-/tree/main/tenants-config/cluster/kflux-prd-rh02/tenants/submariner-tenant),
    adding or removing OCP versions as needed.
 2. If versions should be updated for an incoming or outgoing OCP version, update the
    [drop-versions.json](../drop-versions.json) map, which maps an OCP version to the version of the
@@ -37,7 +37,7 @@ index for the `volsync-product` operator package:
    For example:
 
    ```shell
-   ./build/add-bundle.sh quay.io/redhat-user-workloads/volsync-tenant/volsync-bundle-X-Y@sha256:<sha>
+   ./build/add-bundle.sh quay.io/redhat-user-workloads/submariner-tenant/submariner-bundle-X-Y@sha256:<sha>
    ```
 
 2. Pruning previous catalogs without compelling reason is not allowed since it's already been

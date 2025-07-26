@@ -33,7 +33,7 @@ validate-catalog:
 
 VERSION_TAG ?= latest
 IMG_REPO ?= quay.io/stolostron
-IMAGE_TAG_BASE ?= $(IMG_REPO)/volsync-operator-fbc
+IMAGE_TAG_BASE ?= $(IMG_REPO)/submariner-operator-fbc
 IMG ?= $(IMAGE_TAG_BASE):$(VERSION_TAG)
 
 .PHONY: build-image

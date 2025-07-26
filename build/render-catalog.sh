@@ -2,7 +2,7 @@
 
 set -e
 
-if [[ $(basename "${PWD}") != "volsync-operator-product-fbc" ]]; then
+if [[ $(basename "${PWD}") != "submariner-operator-product-fbc" ]]; then
   echo "error: Script must be run from the base of the repository."
   exit 1
 fi
@@ -70,5 +70,5 @@ fi
 
 # Replace the Konflux images with production images
 for file in catalog-template.yaml catalog-*/bundles/*.yaml; do
-  ${SED} -i -E 's%quay.io/redhat-user-workloads/[^@]+%registry.redhat.io/rhacm2/volsync-operator-bundle%g' "${file}"
+  ${SED} -i -E 's%quay.io/redhat-user-workloads/[^@]+%registry.redhat.io/rhacm2/submariner-operator-bundle%g' "${file}"
 done
