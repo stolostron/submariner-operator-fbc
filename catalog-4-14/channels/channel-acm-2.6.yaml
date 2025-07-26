@@ -1,6 +1,0 @@
-entries:
-  - name: volsync-product.v0.5.2
-    skipRange: '>=0.4.0 <0.5.2'
-name: acm-2.6
-package: volsync-product
-schema: olm.channel
