@@ -10,14 +10,6 @@ entries:
       mediatype: image/svg+xml
     name: submariner-product
     schema: olm.package
-  - image: registry.redhat.io/rhacm2/submariner-operator-bundle@sha256:6bc3afd872adcfe6c9e5c1d65f1487f0cbd1a1faa66dfadc045bf7bd32a8bf83
-    schema: olm.bundle
-  - name: stable-0.20
-    package: submariner-product
-    schema: olm.channel
-    entries:
-      - name: submariner-product.v0.20.1
-        skipRange: '>=0.4.0 <0.20.1'
   - image: quay.io/redhat-user-workloads/submariner-tenant/submariner-bundle-0-21:c34fb2f91b60df48ddbb05c049c3a93fd2d1b295
     schema: olm.bundle
   - name: alpha-0.21
