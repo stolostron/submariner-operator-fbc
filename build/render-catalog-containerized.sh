@@ -50,7 +50,12 @@ for catalog_file in ${catalogs}; do
 
   yq eval-all -s "select(.schema == \"olm.bundle\") | \"${catalog_dir}/bundles/bundle-v\" + (.properties[] | select(.type == \"olm.package\").value.version) + \".yaml\"" "${catalog_file}"
   yq eval-all -s "select(.schema == \"olm.channel\") | \"${catalog_dir}/channels/channel-\" + .name + \".yaml\"" "${catalog_file}"
-  yq eval "select(.schema == \"olm.package\")" "${catalog_file}" > "${catalog_dir}/package.yaml"
+  yq eval 'select(.schema == "olm.package")' "${catalog_file}" > "${catalog_dir}/package.yaml"
+
+  # Rename the files to remove the extra .yml extension
+  for f in ${catalog_dir}/bundles/*.yml ${catalog_dir}/channels/*.yml; do
+    mv -- "$f" "${f%.yml}"
+  done
 
   rm "${catalog_file}"
 done
