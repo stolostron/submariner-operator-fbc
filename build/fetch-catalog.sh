@@ -22,11 +22,14 @@ if [[ -z ${package} ]]; then
 fi
 
 # Index image to pull from (set the OCP version tag as appropriate)
+# Must be docker-auth'd https://access.redhat.com/articles/RegistryAuthentication
 catalog_image=registry.redhat.io/redhat/redhat-operator-index:v${ocp_version}
 
 # Pull the catalog from the image
-opm migrate -o=yaml "${catalog_image}" ./catalog-migrate
+#opm migrate -o=yaml "${catalog_image}" ./catalog-migrate
+./image_extract.sh $catalog_image
 
 # Convert package to basic template
-opm alpha convert-template basic -o=yaml "./catalog-migrate/${package}/catalog.yaml" >"catalog-template-v${ocp_version}.yaml"
-rm -r catalog-migrate/
+#opm alpha convert-template basic -o=yaml "./catalog-migrate/${package}/catalog.yaml" >"catalog-template.yaml"
+#rm -r catalog-migrate/
+opm alpha convert-template basic -o=yaml images/registry.redhat.io_redhat_redhat-operator-index_v4.19/configs/submariner/catalog.json >"catalog-template.yaml"
