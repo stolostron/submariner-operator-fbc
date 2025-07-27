@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # Exit immediately if a command fails
-set -e
+set -ex
 
 # --- Configuration ---
 # The base directory where subdirectories for images will be created.
