@@ -35,3 +35,24 @@ for catalog_template in ${new_catalog_templates}; do
 done
 
 echo "All rendering complete."
+
+# Decompose the catalog into files for consumability
+echo ""
+echo "Decomposing catalogs into file-based catalogs..."
+catalogs=$(find . -name "catalog-*.yaml" -not -name "catalog-template*.yaml")
+rm -rf catalog-/
+
+for catalog_file in ${catalogs}; do
+  catalog_dir=${catalog_file%\.yaml}
+  mkdir -p "${catalog_dir}"/{bundles,channels}
+
+  echo "Decomposing ${catalog_file} into directory for consumability: ${catalog_dir}/ ..."
+
+  yq eval-all -s "select(.schema == \"olm.bundle\") | \"${catalog_dir}/bundles/bundle-v\" + (.properties[] | select(.type == \"olm.package\").value.version) + \".yaml\"" "${catalog_file}"
+  yq eval-all -s "select(.schema == \"olm.channel\") | \"${catalog_dir}/channels/channel-\" + .name + \".yaml\"" "${catalog_file}"
+  yq eval "select(.schema == \"olm.package\")" "${catalog_file}" > "${catalog_dir}/package.yaml"
+
+  rm "${catalog_file}"
+done
+
+echo "Decomposition complete."
