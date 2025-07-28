@@ -1,16 +1,10 @@
 approvers:
-  - JohnStrunk
-  - jnpacker
-  - tesshuflower
-  - mark-nc
-  - gurnben
-  - sahare
-  - birsanv
+  - dfarrell07
+  - skitt
+  - tpantelis
+  - vthapar
 reviewers:
-  - JohnStrunk
-  - jnpacker
-  - tesshuflower
-  - mark-nc
-  - gurnben
-  - sahare
-  - birsanv
+  - dfarrell07
+  - skitt
+  - tpantelis
+  - vthapar
