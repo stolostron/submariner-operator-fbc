@@ -48,14 +48,19 @@ for catalog_file in ${catalogs}; do
 
   echo "Decomposing ${catalog_file} into directory for consumability: ${catalog_dir}/ ..."
 
-  yq eval-all -s "select(.schema == \"olm.bundle\") | \"${catalog_dir}/bundles/bundle-v\" + (.properties[] | select(.type == \"olm.package\").value.version) + \".yaml\"" "${catalog_file}"
-  yq eval-all -s "select(.schema == \"olm.channel\") | \"${catalog_dir}/channels/channel-\" + .name + \".yaml\"" "${catalog_file}"
-  yq eval 'select(.schema == "olm.package")' "${catalog_file}" > "${catalog_dir}/package.yaml"
+  bundle_content=$(yq eval 'select(.schema == "olm.bundle")' "${catalog_file}")
+  if [ -n "$bundle_content" ]; then
+    bundle_version=$(echo "${bundle_content}" | yq eval '.properties[] | select(.type == "olm.package").value.version' -)
+    echo "${bundle_content}" >> "${catalog_dir}/bundles/bundle-v${bundle_version}.yaml"
+  fi
 
-  # Rename the files to remove the extra .yml extension
-  for f in ${catalog_dir}/bundles/*.yml ${catalog_dir}/channels/*.yml; do
-    mv -- "$f" "${f%.yml}"
-  done
+  channel_content=$(yq eval 'select(.schema == "olm.channel")' "${catalog_file}")
+  if [ -n "$channel_content" ]; then
+    channel_name=$(echo "${channel_content}" | yq eval '.name' -)
+    echo "---" > "${catalog_dir}/channels/channel-${channel_name}.yaml"
+    echo "${channel_content}" >> "${catalog_dir}/channels/channel-${channel_name}.yaml"
+  fi
+  yq eval 'select(.schema == "olm.package")' "${catalog_file}" > "${catalog_dir}/package.yaml"
 
   rm "${catalog_file}"
 done
