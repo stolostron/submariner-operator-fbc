@@ -43,7 +43,7 @@ TEST_BUNDLE_CHANNELS="alpha"
 
 # --- Run the add script --- #
 echo "### Testing add-bundle-to-template.sh (Advanced) ###"
-./build/add-bundle-to-template.sh \
+./scripts/add-bundle-to-template.sh \
   "${TEST_CATALOG_TEMPLATE}" \
   "${TEST_BUNDLE_IMAGE}" \
   "${TEST_BUNDLE_NAME}" \
