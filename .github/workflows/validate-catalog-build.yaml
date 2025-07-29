@@ -24,10 +24,19 @@ jobs:
     - name: Run build script
       run: ./build/build.sh
 
-    - name: Verify catalogs are rebuilt
+    - name: Verify catalogs are rebuilt and no unexpected changes
       run: |
+        # Check for existence of catalog directories
         if ! ls -d catalog-*/ > /dev/null 2>&1; then
           echo "Error: Build script did not regenerate catalog directories."
           exit 1
         fi
         echo "Success: Catalog directories were successfully rebuilt."
+
+        # Check for any remaining untracked or modified files
+        if git status --porcelain | grep -q .; then
+          echo "Error: Unexpected untracked or modified files found after build."
+          git status
+          exit 1
+        fi
+        echo "Success: No unexpected changes or untracked files found."
