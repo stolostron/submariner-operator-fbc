@@ -10,7 +10,7 @@ cd "${REPO_ROOT_DIR}"
 
 # Test with DUMMY_BUNDLE_IMAGE
 echo "Testing get-bundle-metadata.sh with DUMMY_BUNDLE_IMAGE..."
-OUTPUT=$(./build/get-bundle-metadata.sh DUMMY_BUNDLE_IMAGE)
+OUTPUT=$(./scripts/get-bundle-metadata.sh DUMMY_BUNDLE_IMAGE)
 
 expected_digest="BUNDLE_DIGEST=sha256:d404c010f2134b00000000000000000000000000000000000000000000000000"
 expected_version="BUNDLE_VERSION=v0.0.1"
