@@ -93,4 +93,11 @@ for bundle in "${oldest_catalog}"/bundles/*.yaml; do
   yq '.entries[] |= select(.image == "'"${bundle_image}"'").name = "'"${bundle_name}"'"' -i catalog-template.yaml
 done
 
+# Sort catalog
+yq '.entries |= (sort_by(.schema, .name) | reverse)' -i catalog-template.yaml
+yq '.entries |=
+    [(.[] | select(.schema == "olm.package"))] +
+   ([(.[] | select(.schema == "olm.channel"))] | sort_by(.name)) +
+   ([(.[] | select(.schema == "olm.bundle"))] | sort_by(.name))' -i catalog-template.yaml
+
 echo "Decomposition complete."
