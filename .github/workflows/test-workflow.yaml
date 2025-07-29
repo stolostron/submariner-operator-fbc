@@ -1,0 +1,17 @@
+name: Run Test Script
+
+on: [push, pull_request]
+
+jobs:
+  run-test:
+    runs-on: ubuntu-latest
+    container:
+      image: registry.access.redhat.com/ubi8/ubi:latest
+    steps:
+    - uses: actions/checkout@v4
+    - name: Install dependencies
+      run: |
+        dnf update -y
+        dnf install -y podman yq git
+    - name: Run test script
+      run: ./build/test.sh
