@@ -49,7 +49,7 @@ echo "Testing add-bundle-to-template.sh..."
 
 # Run the remove script
 echo "Testing remove-bundle.sh..."
-./build/remove-bundle.sh \
+./scripts/remove-bundle.sh \
   "${TEST_CATALOG_TEMPLATE}" \
   "${TEST_BUNDLE_VERSION}"
 

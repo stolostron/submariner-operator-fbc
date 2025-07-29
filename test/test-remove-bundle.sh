@@ -40,7 +40,7 @@ cat "${TEST_CATALOG_TEMPLATE}"
 
 # Run the script
 echo "Testing remove-bundle.sh..."
-./build/remove-bundle.sh \
+./scripts/remove-bundle.sh \
   "${TEST_CATALOG_TEMPLATE}" \
   "${TEST_BUNDLE_VERSION}"
 

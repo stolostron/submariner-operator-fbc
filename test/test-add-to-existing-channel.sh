@@ -55,7 +55,7 @@ cat "${TEST_CATALOG_TEMPLATE}"
 
 # --- Run the remove script --- #
 echo "### Testing remove-bundle.sh (Advanced) ###"
-./build/remove-bundle.sh \
+./scripts/remove-bundle.sh \
   "${TEST_CATALOG_TEMPLATE}" \
   "${TEST_BUNDLE_VERSION}"
 
