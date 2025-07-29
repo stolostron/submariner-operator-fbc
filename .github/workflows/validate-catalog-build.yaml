@@ -1,0 +1,33 @@
+name: Validate Catalog Build Process
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+    - name: Check out code
+      uses: actions/checkout@v3
+
+    - name: Clear generated catalog directories
+      run: |
+        if ls -d catalog-*/ > /dev/null 2>&1; then
+          echo "Deleting existing catalog directories..."
+          rm -rf catalog-*/
+        else
+          echo "No existing catalog directories to delete."
+        fi
+
+    - name: Run build script
+      run: ./build/build.sh
+
+    - name: Verify catalogs are rebuilt
+      run: |
+        if ! ls -d catalog-*/ > /dev/null 2>&1; then
+          echo "Error: Build script did not regenerate catalog directories."
+          exit 1
+        fi
+        echo "Success: Catalog directories were successfully rebuilt."
