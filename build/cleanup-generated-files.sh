@@ -1,6 +1,6 @@
 #!/bin/bash
 
-set -ex
+set -e
 
 # Remove generated catalog-template-4-*.yaml files
 rm -f catalog-template-4-*.yaml

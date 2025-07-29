@@ -1,5 +1,5 @@
 #!/bin/bash
-set -ex
+set -e
 
 if [[ $(basename "${PWD}") != "submariner-operator-product-fbc" ]]; then
   echo "error: Script must be run from the base of the repository."

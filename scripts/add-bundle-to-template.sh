@@ -1,6 +1,6 @@
 #!/bin/bash
 
-set -ex
+set -e
 
 catalog_template_path=${1}
 bundle_image=${2}
