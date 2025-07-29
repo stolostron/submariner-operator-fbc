@@ -101,7 +101,7 @@ yq '.entries |=
    ([(.[] | select(.schema == "olm.bundle"))] | sort_by(.name))' -i catalog-template.yaml
 
 # Replace the Konflux images with production images
-for file in catalog-template.yaml catalog-*/bundles/*.yaml; do
+for file in catalog-*/bundles/*.yaml; do
   sed -i -E 's%quay.io/redhat-user-workloads/[^:@]+%registry.redhat.io/rhacm2/submariner-operator-bundle%g' "${file}"
 done
 
