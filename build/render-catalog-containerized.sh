@@ -1,6 +1,11 @@
 #!/bin/bash
 set -ex
 
+if [[ $(basename "${PWD}") != "submariner-operator-product-fbc" ]]; then
+  echo "error: Script must be run from the base of the repository."
+  exit 1
+fi
+
 OPM_IMAGE="quay.io/operator-framework/opm:latest"
 
 # Render older catalogs (OCP <= 4.16)
