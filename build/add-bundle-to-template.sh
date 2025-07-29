@@ -14,7 +14,7 @@ if [[ -z "${catalog_template_path}" || -z "${bundle_image}" || -z "${bundle_name
 fi
 
 # Add bundle entry
-yq '.entries += {"image": "'"${bundle_image}"'", "schema": "olm.bundle"}' -i "${catalog_template_path}"
+yq '.entries += {"name": "'"${bundle_name}"'", "image": "'"${bundle_image}"'", "schema": "olm.bundle"}' -i "${catalog_template_path}"
 
 # Add bundle to channels
 for channel in ${bundle_channels//,/ }; do

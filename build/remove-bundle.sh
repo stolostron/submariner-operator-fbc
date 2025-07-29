@@ -23,3 +23,6 @@ yq e 'del(.entries[] | select(.image == "'"${bundle_image}"'"))' -i "${catalog_t
 
 # Remove bundle from channels
 yq e '(.entries[] | select(.schema == "olm.channel").entries) |= del(.[] | select(.name == "'"${bundle_name}"'"))' -i "${catalog_template_path}"
+
+# Remove empty channels
+yq e 'del(.entries[] | select(.schema == "olm.channel" and .entries | length == 0))' -i "${catalog_template_path}"
