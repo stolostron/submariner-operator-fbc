@@ -1,5 +1,5 @@
 ---
-image: quay.io/redhat-user-workloads/submariner-tenant/submariner-bundle-0-21:c34fb2f91b60df48ddbb05c049c3a93fd2d1b295
+image: registry.redhat.io/rhacm2/submariner-operator-bundle:c34fb2f91b60df48ddbb05c049c3a93fd2d1b295
 name: submariner.v0.21.0
 package: submariner
 properties:
@@ -597,7 +597,7 @@ properties:
       provider:
         name: submariner.io
 relatedImages:
-  - image: quay.io/redhat-user-workloads/submariner-tenant/submariner-bundle-0-21:c34fb2f91b60df48ddbb05c049c3a93fd2d1b295
+  - image: registry.redhat.io/rhacm2/submariner-operator-bundle:c34fb2f91b60df48ddbb05c049c3a93fd2d1b295
     name: ""
   - image: registry.redhat.io/rhacm2/lighthouse-agent-rhel9@sha256:6b4d34e7a40b21cf464e2f42cef21ef72a69ae8a3f4e7600a7bd85aa689117d9
     name: lighthouse-agent
