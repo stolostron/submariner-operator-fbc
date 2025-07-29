@@ -9,10 +9,7 @@ REPO_ROOT_DIR=$(realpath "${SCRIPT_DIR}/..")
 cd "${REPO_ROOT_DIR}"
 
 # Cleanup any previous runs
-rm -f catalog-template-4-*.yaml
-
-# Remove committed catalogs
-rm -rf catalog-4-*
+./build/cleanup-generated-files.sh
 
 # Add a bundle
 # FIXME This fails if added. Fix scripts to handle multiple bundles.
@@ -41,3 +38,6 @@ if git status --porcelain -- . ':!build/' | grep -q .; then
 fi
 
 echo "### Test complete ###"
+
+# Cleanup after run
+./build/cleanup-generated-files.sh
