@@ -25,7 +25,7 @@ check_git_status() {
 }
 
 # Cleanup any previous runs
-./build/cleanup-generated-files.sh
+./scripts/cleanup-generated-files.sh
 
 echo "### Running all tests... ###"
 
@@ -41,4 +41,4 @@ done
 echo "### All tests complete ###"
 
 # Cleanup after run
-./build/cleanup-generated-files.sh
+./scripts/cleanup-generated-files.sh

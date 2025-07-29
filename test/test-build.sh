@@ -7,10 +7,10 @@ REPO_ROOT_DIR=$(realpath "${SCRIPT_DIR}/..")
 cd "${REPO_ROOT_DIR}"
 
 # Ensure cleanup happens on exit
-trap './build/cleanup-generated-files.sh' EXIT
+trap './scripts/cleanup-generated-files.sh' EXIT
 
 echo "--> Cleaning up before test..."
-./build/cleanup-generated-files.sh
+./scripts/cleanup-generated-files.sh
 
 echo "--> Running build script..."
 ./build/build.sh
