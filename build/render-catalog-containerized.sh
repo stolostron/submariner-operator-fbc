@@ -53,19 +53,32 @@ for catalog_file in ${catalogs}; do
 
   echo "Decomposing ${catalog_file} into directory for consumability: ${catalog_dir}/ ..."
 
+  # Extract and write the olm.bundle
   bundle_content=$(yq eval 'select(.schema == "olm.bundle")' "${catalog_file}")
   if [ -n "$bundle_content" ]; then
     bundle_version=$(echo "${bundle_content}" | yq eval '.properties[] | select(.type == "olm.package").value.version' -)
-    echo "${bundle_content}" >> "${catalog_dir}/bundles/bundle-v${bundle_version}.yaml"
+    bundle_file="${catalog_dir}/bundles/bundle-v${bundle_version}.yaml"
+    echo "${bundle_content}" > "${bundle_file}"
+    echo "  - Wrote bundle to ${bundle_file}"
   fi
 
+  # Extract and write the olm.channel
   channel_content=$(yq eval 'select(.schema == "olm.channel")' "${catalog_file}")
   if [ -n "$channel_content" ]; then
     channel_name=$(echo "${channel_content}" | yq eval '.name' -)
-    echo "---" > "${catalog_dir}/channels/channel-${channel_name}.yaml"
-    echo "${channel_content}" >> "${catalog_dir}/channels/channel-${channel_name}.yaml"
+    channel_file="${catalog_dir}/channels/channel-${channel_name}.yaml"
+    echo "---" > "${channel_file}"
+    echo "${channel_content}" >> "${channel_file}"
+    echo "  - Wrote channel to ${channel_file}"
   fi
-  yq eval 'select(.schema == "olm.package")' "${catalog_file}" > "${catalog_dir}/package.yaml"
+
+  # Extract and write the olm.package
+  package_content=$(yq eval 'select(.schema == "olm.package")' "${catalog_file}")
+  if [ -n "$package_content" ]; then
+    package_file="${catalog_dir}/package.yaml"
+    echo "${package_content}" > "${package_file}"
+    echo "  - Wrote package to ${package_file}"
+  fi
 
   rm "${catalog_file}"
 done
