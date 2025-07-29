@@ -39,5 +39,8 @@ fi
 
 echo "### Test complete ###"
 
+# Run modular tests
+./test/test-get-bundle-metadata.sh
+
 # Cleanup after run
 ./build/cleanup-generated-files.sh
