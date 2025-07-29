@@ -14,8 +14,9 @@ rm -f catalog-template-4-*.yaml
 # Remove committed catalogs
 rm -rf catalog-4-*
 
-#echo "### Running fetch-catalog.sh ###"
-#./build/fetch-catalog.sh 4.19 submariner
+# Add a bundle
+# FIXME This fails if added. Fix scripts to handle multiple bundles.
+#./build/add-bundle.sh quay.io/redhat-user-workloads/submariner-tenant/submariner-bundle-0-21:submariner-bundle-0-21-on-push-s22ll-build-container
 
 echo "### Running generate-catalog-template.sh ###"
 ./build/generate-catalog-template.sh
