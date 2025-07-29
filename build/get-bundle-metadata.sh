@@ -29,3 +29,4 @@ bundle_channels=$(echo "${bundle_json}" | jq -r '.Labels["operators.operatorfram
 echo "BUNDLE_DIGEST=${bundle_digest}"
 echo "BUNDLE_VERSION=${bundle_version}"
 echo "BUNDLE_CHANNELS=${bundle_channels}"
+echo "BUNDLE_IMAGE=${bundle_image}"

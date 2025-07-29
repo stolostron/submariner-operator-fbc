@@ -12,8 +12,12 @@ cd "${REPO_ROOT_DIR}"
 ./build/cleanup-generated-files.sh
 
 # Add a bundle
-# FIXME This fails if added. Fix scripts to handle multiple bundles.
-#./build/add-bundle.sh quay.io/redhat-user-workloads/submariner-tenant/submariner-bundle-0-21:submariner-bundle-0-21-on-push-s22ll-build-container
+# Get bundle info
+eval $(./build/get-bundle-metadata.sh DUMMY_BUNDLE_IMAGE)
+
+# Add the bundle to the base catalog template
+#./build/add-bundle-to-template.sh catalog-template.yaml "${BUNDLE_IMAGE}" "submariner-product.${BUNDLE_VERSION}-${BUNDLE_DIGEST:0:7}" "${BUNDLE_VERSION}" "${BUNDLE_CHANNELS}"
+# TODO Add removal script
 
 echo "### Running generate-catalog-template.sh ###"
 ./build/generate-catalog-template.sh
