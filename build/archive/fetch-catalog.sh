@@ -26,10 +26,9 @@ fi
 catalog_image=registry.redhat.io/redhat/redhat-operator-index:v${ocp_version}
 
 # Pull the catalog from the image
-#opm migrate -o=yaml "${catalog_image}" ./catalog-migrate
-./image_extract.sh $catalog_image
+opm migrate -o=yaml "${catalog_image}" ./catalog-migrate
 
 # Convert package to basic template
-#opm alpha convert-template basic -o=yaml "./catalog-migrate/${package}/catalog.yaml" >"catalog-template.yaml"
-#rm -r catalog-migrate/
+opm alpha convert-template basic -o=yaml "./catalog-migrate/${package}/catalog.yaml" >"catalog-template.yaml"
+rm -r catalog-migrate/
 opm alpha convert-template basic -o=yaml images/registry.redhat.io_redhat_redhat-operator-index_v4.19/configs/submariner/catalog.json >"catalog-template.yaml"
