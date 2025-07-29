@@ -12,6 +12,8 @@ jobs:
     - name: Install dependencies
       run: |
         dnf update -y
-        dnf install -y podman yq git
+        dnf install -y podman git
+        wget https://github.com/mikefarah/yq/releases/latest/download/yq_linux_amd64 -O /usr/local/bin/yq
+        chmod +x /usr/local/bin/yq
     - name: Run test script
       run: ./build/test.sh
