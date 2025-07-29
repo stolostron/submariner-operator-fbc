@@ -14,4 +14,6 @@ echo "--> Generating catalog template..."
 echo "--> Rendering containerized catalog..."
 ./scripts/render-catalog-containerized.sh
 
+./scripts/cleanup-generated-files.sh
+
 echo "--> Build complete."
