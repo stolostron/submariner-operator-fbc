@@ -27,9 +27,17 @@ echo "### Running render-catalog-containerized.sh ###"
 # Cleanup run
 rm -f catalog-template-4-*.yaml
 
-# TODO Assert no difference in relevant files
-git diff|cat
-# TODO Assert no deleted things, or just smarter assert overall
-git status
+# Assert no difference in relevant files outside build/
+echo "Checking for changes outside 'build/' directory..."
+if ! git diff --exit-code -- . ':!build/'; then
+  echo "Error: Changes detected outside the 'build/' directory. Please commit or discard them."
+  exit 1
+fi
+
+# Assert no untracked or uncommitted changes outside build/
+if git status --porcelain -- . ':!build/' | grep -q .; then
+  echo "Error: Untracked or uncommitted changes detected outside the 'build/' directory. Please commit or discard them."
+  exit 1
+fi
 
 echo "### Test complete ###"
