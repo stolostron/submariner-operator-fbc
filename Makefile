@@ -49,7 +49,8 @@ build-catalog: build-catalogs
 
 # ref: https://github.com/operator-framework/operator-registry?tab=readme-ov-file#using-the-catalog-locally
 .PHONY: run-image run-images
-run-image:
+run-image: build-image
+	$(MAKE) stop-image
 	podman run -d -p 50051:50051 $(IMG) &
 run-images: run-image
 
@@ -85,14 +86,38 @@ grpcurl: $(GRPCURL)
 	fi
 
 .PHONY: test-image test-images
-test-image: grpcurl
-	# Checking availability of server endpoint
+test-image: run-image grpcurl
+	@echo "# Checking availability of server endpoint"
+	@connected=false; \
 	for i in $$(seq 1 5); do \
-		$(GRPCURL) -plaintext localhost:50051 list 1>/dev/null || \
-			{ echo "Connection failed. Retrying ($${i}/5)"; sleep 3; }; \
-	done
-	# Validate package list
-	$(GRPCURL) -plaintext localhost:50051 api.Registry.ListPackages | diff test/packageList.json - && echo "Success!"
+		if $(GRPCURL) -plaintext localhost:50051 list > /dev/null 2>&1; then \
+			echo "--> Connection successful on attempt $${i}."; \
+			connected=true; \
+			break; \
+		else \
+			echo "Connection failed. Retrying ($${i}/5)"; \
+			sleep 3; \
+		fi; \
+	done; \
+	if [ "$$connected" = false ]; then \
+		echo "Error: Could not connect to the server after 5 attempts."; \
+		exit 1; \
+	fi
+	@echo "# Validate package list"
+	@echo "--> Comparing package list from running image with test/packageList.json"
+	@actual_packages=$(mktemp); \
+	$(GRPCURL) -plaintext localhost:50051 api.Registry.ListPackages > $actual_packages; \
+	echo "--> Expected packages:"; \
+	cat test/packageList.json; \
+	echo "--> Actual packages from image:"; \
+	cat $actual_packages; \
+	if diff -u test/packageList.json $actual_packages; then \
+		echo "--> Package list validation successful!"; \
+	else \
+		echo "--> Error: Package list validation failed."; \
+		exit 1; \
+	fi; \
+	rm $actual_packages
 test-images: test-image
 
 .PHONY: test-script test-scripts
