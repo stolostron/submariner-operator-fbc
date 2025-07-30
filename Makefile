@@ -84,3 +84,7 @@ test-image: grpcurl
 	done
 	# Validate package list
 	$(GRPCURL) -plaintext localhost:50051 api.Registry.ListPackages | diff test/packageList.json - && echo "Success!"
+
+.PHONY: test-scripts
+test-scripts:
+	./test/test.sh
