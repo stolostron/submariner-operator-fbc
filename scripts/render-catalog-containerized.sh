@@ -90,7 +90,8 @@ for bundle in "${oldest_catalog}"/bundles/*.yaml; do
   bundle_image=$(yq '.image' "${bundle}")
   bundle_name=$(yq '.name' "${bundle}")
 
-  yq '.entries[] |= select(.image == "'"${bundle_image}"'").name = "'"${bundle_name}"'"' -i catalog-template.yaml
+  # TODO is this desired? it's from og script
+  #yq '.entries[] |= select(.image == "'"${bundle_image}"'").name = "'"${bundle_name}"'"' -i catalog-template.yaml
 done
 
 # Sort catalog
