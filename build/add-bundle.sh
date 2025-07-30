@@ -46,7 +46,7 @@ for channel in ${bundle_channels//,/ }; do
     echo "  Creating new ${channel} channel ..."
     new_channel="
       name: ${channel}
-      package: submariner-product
+      package: submariner
       schema: olm.channel
       entries: []
     "
@@ -58,14 +58,14 @@ for channel in ${bundle_channels//,/ }; do
     # No previous version to replace
     echo "    adding first version to entries (no replaces version)"
     channel_entry="
-      name: submariner-product.${bundle_version}
+      name: submariner.${bundle_version}
       skipRange: '>=0.4.0 <${bundle_version#v}'
     " yq '.entries[] |= select(.schema == "olm.channel") |= select(.name == "'"${channel}"'").entries += env(channel_entry)' -i catalog-template.yaml
   else
     replaces_version=$(yq '.entries[] | select(.schema == "olm.channel") | select(.name == "'"${channel}"'").entries[-1].name' catalog-template.yaml)
     echo "    replaces_version is: ${replaces_version}"
     channel_entry="
-      name: submariner-product.${bundle_version}
+      name: submariner.${bundle_version}
       replaces: ${replaces_version}
       skipRange: '>=0.4.0 <${bundle_version#v}'
     " yq '.entries[] |= select(.schema == "olm.channel") |= select(.name == "'"${channel}"'").entries += env(channel_entry)' -i catalog-template.yaml

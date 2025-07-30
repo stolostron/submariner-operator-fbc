@@ -11,10 +11,10 @@ the catalog-template - then the next step (Adding or removing OCP versions) can 
 versions from older OCPs.
 
 Use the [build/fetch-catalog.sh](../build/fetch-catalog.sh) script to pulling from the OCP vX.Y
-index for the `submariner-product` operator package:
+index for the `submariner` operator package:
 
 ```bash
-./build/fetch-catalog.sh X.Y submariner-product
+./build/fetch-catalog.sh X.Y submariner
 ```
 
 ## Adding or removing OCP versions

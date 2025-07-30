@@ -7,7 +7,7 @@ if [[ $(basename "${PWD}") != "submariner-operator-product-fbc" ]]; then
   exit 1
 fi
 
-echo "Using drop version Submariner-Product map:"
+echo "Using drop version Submariner map:"
 jq '.' drop-versions.json
 
 ocp_versions=$(jq -r 'keys[]' drop-versions.json)

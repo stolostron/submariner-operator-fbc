@@ -19,16 +19,16 @@ entries:
     icon:
       base64data: somebase64data
       mediatype: image/svg+xml
-    name: submariner-product
+    name: submariner
     schema: olm.package
   - name: alpha-0.21
-    package: submariner-product
+    package: submariner
     schema: olm.channel
     entries:
-      - name: submariner-product.v0.21.0-rc0
+      - name: submariner.v0.21.0-rc0
         skipRange: '>=0.4.0 <0.21.0-rc0'
   - image: test-registry/test-bundle:v0.0.1
-    name: submariner-product.v0.0.1.abcdefg
+    name: submariner.v0.0.1.abcdefg
     schema: olm.bundle
 EOF
 

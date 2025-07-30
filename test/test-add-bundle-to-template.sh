@@ -19,19 +19,19 @@ entries:
     icon:
       base64data: somebase64data
       mediatype: image/svg+xml
-    name: submariner-product
+    name: submariner
     schema: olm.package
   - name: alpha-0.21
-    package: submariner-product
+    package: submariner
     schema: olm.channel
     entries:
-      - name: submariner-product.v0.21.0-rc0
+      - name: submariner.v0.21.0-rc0
         skipRange: '>=0.4.0 <0.21.0-rc0'
 EOF
 
 # Test data
 TEST_BUNDLE_IMAGE="test-registry/test-bundle:v0.0.1"
-TEST_BUNDLE_NAME="test-product.v0.0.1-abcdefg"
+TEST_BUNDLE_NAME="test-submariner.v0.0.1-abcdefg"
 TEST_BUNDLE_VERSION="v0.0.1"
 TEST_BUNDLE_CHANNELS="alpha,beta"
 

@@ -23,7 +23,7 @@ for channel in ${bundle_channels//,/ }; do
   # Check if channel exists, create if not
   if [[ -z $(yq '.entries[] | select(.schema == "olm.channel") | select(.name == "'"${channel}"'")' "${catalog_template_path}") ]]; then
     echo "  Creating new ${channel} channel ..."
-    yq '.entries += {"name": "'"${channel}"'", "package": "submariner-product", "schema": "olm.channel", "entries": []}' -i "${catalog_template_path}"
+    yq '.entries += {"name": "'"${channel}"'", "package": "submariner", "schema": "olm.channel", "entries": []}' -i "${catalog_template_path}"
   fi
 
   # Add bundle to channel entries

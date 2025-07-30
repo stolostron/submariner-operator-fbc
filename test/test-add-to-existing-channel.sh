@@ -20,16 +20,16 @@ entries:
     icon:
       base64data: somebase64data
       mediatype: image/svg+xml
-    name: submariner-product
+    name: submariner
     schema: olm.package
   - name: alpha
-    package: submariner-product
+    package: submariner
     schema: olm.channel
     entries:
-      - name: submariner-product.v0.20.0
+      - name: submariner.v0.20.0
         skipRange: '>=0.4.0 <0.20.0'
   - image: test-registry/test-bundle:v0.20.0
-    name: submariner-product.v0.20.0
+    name: submariner.v0.20.0
     schema: olm.bundle
 EOF
 
@@ -37,7 +37,7 @@ cp "${TEST_CATALOG_TEMPLATE}" "${ORIGINAL_CATALOG_TEMPLATE}"
 
 # Test data for a new bundle to be added to the existing alpha channel
 TEST_BUNDLE_IMAGE="test-registry/test-bundle:v0.21.0"
-TEST_BUNDLE_NAME="submariner-product.v0.21.0"
+TEST_BUNDLE_NAME="submariner.v0.21.0"
 TEST_BUNDLE_VERSION="v0.21.0"
 TEST_BUNDLE_CHANNELS="alpha"
 
