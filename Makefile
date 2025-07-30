@@ -25,7 +25,7 @@ opm: $(OPM)
 	fi
 
 .PHONY: validate-catalog
-validate-catalog:
+validate-catalog: opm
 	@for catalog in catalog-*/; do \
 		echo "Validating $${catalog} ..."; \
 		$(OPM) validate $${catalog}; \
