@@ -18,7 +18,7 @@ jobs:
             echo "No existing catalog directories to delete."
           fi
       - name: Run build script
-        run: ./build/build.sh
+        run: make build-catalogs
       - name: Verify catalogs are rebuilt and no unexpected changes
         run: |
           # Check for existence of catalog directories

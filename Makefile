@@ -40,6 +40,10 @@ IMG ?= $(IMAGE_TAG_BASE):$(VERSION_TAG)
 build-image:
 	podman build -t $(IMG) -f catalog.Dockerfile --build-arg INPUT_DIR=$$(find catalog-* -type d -maxdepth 0 | head -1) .
 
+.PHONY: build-catalogs
+build-catalogs:
+	./build/build.sh
+
 # ref: https://github.com/operator-framework/operator-registry?tab=readme-ov-file#using-the-catalog-locally
 .PHONY: run-image
 run-image:
