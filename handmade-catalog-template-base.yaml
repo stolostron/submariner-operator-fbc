@@ -1,3 +1,8 @@
+#
+# This file is the main, hand-edited base template for the Submariner operator catalog.
+#
+# See the main README.md for instructions on how to update and manage this file.
+#
 ---
 entries:
   - defaultChannel: stable-0.21

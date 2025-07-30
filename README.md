@@ -16,13 +16,33 @@ The primary script for building the catalogs is `build/build.sh`, which is invok
 
 ## Catalog Management
 
-This repository provides scripts to manage the catalog content:
+This repository provides scripts to manage the catalog content incrementally. The `catalog-template.yaml` file is the source of truth for the catalog, and the scripts modify it directly.
 
-*   **Adding a Bundle:** To add a new operator bundle to the catalog, use the `scripts/add-bundle-to-template.sh` script. This script takes the catalog template path, bundle image, bundle name, bundle version, and channels as arguments.
+### Adding a Bundle
 
-*   **Removing a Bundle:** To remove an existing operator bundle from the catalog, use the `scripts/remove-bundle.sh` script. This script takes the catalog template path and the bundle version to remove as arguments.
+To add a new operator bundle to the catalog, use the `scripts/add-bundle.sh` script. This script takes the bundle image tag as an argument and will add it to the `catalog-template.yaml`.
 
-*   **Fetching a Catalog:** To fetch the Submariner operator catalog from a specific OpenShift version, use the `scripts/fetch-catalog-containerized.sh` script. This script takes the OpenShift version and the package name as arguments.
+```bash
+./scripts/add-bundle.sh <bundle_image_tag>
+```
+
+### Removing a Bundle
+
+To remove an existing operator bundle from the catalog, use the `scripts/remove-bundle.sh` script. This script takes the bundle version to remove as an argument and will remove it from the `catalog-template.yaml`.
+
+```bash
+./scripts/remove-bundle.sh <bundle_version>
+```
+
+### Fetching a Catalog for Reference
+
+To fetch the Submariner operator catalog from a specific OpenShift version for reference, use the `scripts/fetch-catalog-containerized.sh` script. This script takes the OpenShift version and the package name as arguments.
+
+```bash
+./scripts/fetch-catalog-containerized.sh 4.19 submariner
+```
+
+This will produce a file like `submariner-catalog-config-4.19.yaml` which you can use as a reference for the required fields when adding a new bundle.
 
 ## Testing
 
