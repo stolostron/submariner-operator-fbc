@@ -43,7 +43,7 @@ build-image:
 # ref: https://github.com/operator-framework/operator-registry?tab=readme-ov-file#using-the-catalog-locally
 .PHONY: run-image
 run-image:
-	podman run -p 50051:50051 $(IMG)
+	podman run -d -p 50051:50051 $(IMG) &
 
 .PHONY: stop-image
 stop-image:
