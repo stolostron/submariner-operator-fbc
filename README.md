@@ -1,83 +1,43 @@
-# File based catalog for the Submariner operator
+# Submariner Operator FBC
 
-This is based on/copied from gatekeeper-operator-fbc
+This repository manages the File-Based Catalog (FBC) for the `submariner` operator.
 
-# Managing the File Based Catalog
+## Overview
 
-## Initializing the catalog from a current operator index
+This repository contains the necessary templates, scripts, and configurations to generate and manage the Submariner operator catalog for various OpenShift versions.
 
-This step may not need to be re-done - was done with the oldest supported OCP at the time to generate
-the catalog-template - then the next step (Adding or removing OCP versions) can prune the older unsupported
-versions from older OCPs.
+## Catalog Generation
 
-Use the [build/fetch-catalog.sh](../build/fetch-catalog.sh) script to pulling from the OCP vX.Y
-index for the `submariner` operator package:
+The primary script for building the catalogs is `build/build.sh`. This script orchestrates a series of helper scripts to perform the following steps:
+
+1.  **Generate Version-Specific Templates:** The `scripts/generate-catalog-template.sh` script takes the main `catalog-template.yaml` as a base. For each supported OCP version defined in `drop-versions.json`, it creates a version-specific template (e.g., `catalog-template-4-19.yaml`). It then prunes (removes) older bundles and channels from each of these templates according to the versions specified in `drop-versions.json`.
+2.  **Render and Decompose Catalogs:** The `scripts/render-catalog-containerized.sh` script processes each of the version-specific templates (e.g., `catalog-template-4-19.yaml`) generated in the previous step. For each template, it first uses `opm` to render it into a temporary, monolithic `catalog-4-19.yaml` file. It then immediately decomposes this monolithic file, splitting it into a standard file-based catalog structure inside the `catalog-4-19/` directory. The temporary monolithic file is deleted upon completion. The temporary monolithic file is deleted upon completion.
+3.  **Format:** The `scripts/format-yaml.sh` script ensures all YAML files are consistently formatted using `yq`.
+
+To build the catalogs, simply run:
 
 ```bash
-./build/fetch-catalog.sh X.Y submariner
+make build-catalogs
 ```
 
-## Adding or removing OCP versions
+## Catalog Management
 
-1. Update
-   [konflux-release-data](https://gitlab.cee.redhat.com/releng/konflux-release-data/-/tree/main/tenants-config/cluster/kflux-prd-rh02/tenants/submariner-tenant),
-   adding or removing OCP versions as needed.
-2. If versions should be updated for an incoming or outgoing OCP version, update the
-   [drop-versions.json](../drop-versions.json) map, which maps an OCP version to the version of the
-   operator that should be dropped from the catalog.
-3. Merge the PRs from Konflux corresponding to the addition or removal of the application. For
-   additions, run the [pipeline-patch.sh](../.tekton/pipeline-patch.sh) script to patch the incoming
-   pipeline with relevant updates.
+This repository provides scripts to manage the catalog content:
 
-## Updating the catalog entries
+*   **Adding a Bundle:** To add a new operator bundle to the catalog, use the `scripts/add-bundle-to-template.sh` script. This script takes the catalog template path, bundle image, bundle name, bundle version, and channels as arguments.
 
-1. Run the [`add-bundle.sh`](../build/add-bundle.sh) script to add catalog entries into
-   [`catalog-template.yaml`](../catalog-template.yaml) giving the Konflux bundle image as an
-   argument. The image can be found on the Konflux console in the Application in the Components tab.
-   For example:
+*   **Removing a Bundle:** To remove an existing operator bundle from the catalog, use the `scripts/remove-bundle.sh` script. This script takes the catalog template path and the bundle version to remove as arguments.
 
-   ```shell
-   ./build/add-bundle.sh quay.io/redhat-user-workloads/submariner-tenant/submariner-bundle-X-Y@sha256:<sha>
-   ```
+*   **Fetching a Catalog:** To fetch the Submariner operator catalog from a specific OpenShift version, use the `scripts/fetch-catalog-containerized.sh` script. This script takes the OpenShift version and the package name as arguments.
 
-2. Pruning previous catalogs without compelling reason is not allowed since it's already been
-   deployed to customers. However, we can prune catalogs for unreleased versions of OCP.
+## Testing
 
-   Update the OCP version <-> operator version map, [drop-versions.json](../drop-versions.json),
-   with the version of the operator to drop for any unreleased OCP version.
+The repository includes a comprehensive set of tests and GitHub Actions to ensure the integrity of the catalog and the functionality of the management scripts.
 
-3. Run the [build/generate-catalog-template.sh](../build/generate-catalog-template.sh) to regenerate
-   the catalog template files:
+The following `make` targets are available for testing:
 
-   ```bash
-   ./build/generate-catalog-template.sh
-   ```
+*   `make test-scripts`: Runs the main test script at `test/test.sh`.
+*   `make validate-catalog`: Validates the generated catalogs using `opm`.
+*   `make test-image`: Builds, runs, and tests the catalog image.
 
-4. Run the [render-catalog.sh](../build/render-catalog.sh) script to re-render the catalog for the
-   template files:
-
-   ```bash
-   ./build/render-catalog.sh
-   ```
-
-   **NOTE:** The catalog rendering replaces the Konflux image registry with the production Red Hat
-   registry so the `opm` CLI can no longer reach it if you try to generate the catalog again before
-   the image's release. In this case, you need to revert the bundle reference to the Konflux one for
-   the script to complete.
-
-## Testing an FBC image
-
-A catalog source can be created pointing to the FBC image as follows:
-
-```yaml
-apiVersion: operators.coreos.com/v1alpha1
-kind: CatalogSource
-metadata:
-  name: fbc-test-catalogsource
-  namespace: openshift-marketplace
-spec:
-  sourceType: grpc
-  image: quay.io/redhat-user-workloads/<tenant>-tenant/<fbc-image>@sha256:<digest>
-  displayName: Konflux FBC test CatalogSource
-  publisher: Red Hat
-```
+These tests are automatically executed on every push and pull request via GitHub Actions.
