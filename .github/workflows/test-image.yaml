@@ -1,0 +1,21 @@
+name: Test Image Build
+on: [push, pull_request]
+jobs:
+  test-image:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y podman git wget jq
+          wget https://github.com/mikefarah/yq/releases/latest/download/yq_linux_amd64 -O /usr/local/bin/yq
+          chmod +x /usr/local/bin/yq
+      - name: Build image
+        run: make build-image
+      - name: Run image
+        run: make run-image
+      - name: Test image
+        run: make test-image
+      - name: Stop image
+        run: make stop-image
