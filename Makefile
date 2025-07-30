@@ -24,34 +24,39 @@ opm: $(OPM)
 		chmod +x $(OPM); \
 	fi
 
-.PHONY: validate-catalog
+.PHONY: validate-catalog validate-catalogs
 validate-catalog: opm
 	@for catalog in catalog-*/; do \
 		echo "Validating $${catalog} ..."; \
 		$(OPM) validate $${catalog}; \
 	done
+validate-catalogs: validate-catalog
 
 VERSION_TAG ?= latest
 IMG_REPO ?= quay.io/stolostron
 IMAGE_TAG_BASE ?= $(IMG_REPO)/submariner-operator-fbc
 IMG ?= $(IMAGE_TAG_BASE):$(VERSION_TAG)
 
-.PHONY: build-image
+.PHONY: build-image build-images
 build-image:
 	podman build -t $(IMG) -f catalog.Dockerfile --build-arg INPUT_DIR=$$(find catalog-* -type d -maxdepth 0 | head -1) .
+build-images: build-image
 
-.PHONY: build-catalogs
+.PHONY: build-catalog build-catalogs
 build-catalogs:
 	./build/build.sh
+build-catalog: build-catalogs
 
 # ref: https://github.com/operator-framework/operator-registry?tab=readme-ov-file#using-the-catalog-locally
-.PHONY: run-image
+.PHONY: run-image run-images
 run-image:
 	podman run -d -p 50051:50051 $(IMG) &
+run-images: run-image
 
-.PHONY: stop-image
+.PHONY: stop-image stop-images
 stop-image:
 	podman stop --filter "ancestor=$(IMG)"
+stop-images: stop-image
 
 GRPCURL := $(LOCAL_BIN)/grpcurl
 
@@ -79,7 +84,7 @@ grpcurl: $(GRPCURL)
 		else exit 1; fi; \
 	fi
 
-.PHONY: test-image
+.PHONY: test-image test-images
 test-image: grpcurl
 	# Checking availability of server endpoint
 	for i in $$(seq 1 5); do \
@@ -88,7 +93,9 @@ test-image: grpcurl
 	done
 	# Validate package list
 	$(GRPCURL) -plaintext localhost:50051 api.Registry.ListPackages | diff test/packageList.json - && echo "Success!"
+test-images: test-image
 
-.PHONY: test-scripts
+.PHONY: test-script test-scripts
 test-scripts:
 	./test/test.sh
+test-script: test-scripts
