@@ -13,7 +13,7 @@ echo "--> Cleaning up before test..."
 ./scripts/cleanup-generated-files.sh
 
 echo "--> Running fetch-catalog-containerized.sh script..."
-./build/archive/fetch-catalog-containerized.sh 4.19 submariner
+./scripts/fetch-catalog-containerized.sh 4.19 submariner
 
 echo "--> Verifying output..."
 

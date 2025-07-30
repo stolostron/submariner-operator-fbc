@@ -26,7 +26,7 @@ fi
 catalog_image=registry.redhat.io/redhat/redhat-operator-index:v${ocp_version}
 
 # Pull the catalog from the image
-./build/archive/image_extract.sh "${catalog_image}" "${TEMP_EXTRACT_DIR}"
+./scripts/image_extract.sh "${catalog_image}" "${TEMP_EXTRACT_DIR}"
 
 # The image_extract.sh script extracts the image to a directory named after the image ID.
 # We need to determine that directory name.
