@@ -22,6 +22,9 @@ shouldPrune() {
 
 for version in ${ocp_versions}; do
   cp catalog-template.yaml "catalog-template-${version//./-}.yaml"
+  # OPM does not like comments, will fail with a JSON parsing error, so remove them
+  grep -v '^#' "catalog-template-${version//./-}.yaml" > "catalog-template-${version//./-}.yaml.tmp"
+  mv "catalog-template-${version//./-}.yaml.tmp" "catalog-template-${version//./-}.yaml"
 done
 
 # Prune old X.Y channels
