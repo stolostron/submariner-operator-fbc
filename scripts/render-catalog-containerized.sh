@@ -9,41 +9,44 @@ fi
 OPM_IMAGE="quay.io/operator-framework/opm:latest"
 
 # Render older catalogs (OCP <= 4.16)
-echo "Rendering catalogs for OCP <= 4.16..."
+echo "--> Rendering catalogs for OCP <= 4.16..."
+echo "    (These versions do not require any special rendering flags.)"
 old_catalog_templates=$(find . -name "catalog-template-*.yaml" | grep -e "4-14" -e "4-15" -e "4-16")
 
 for catalog_template in ${old_catalog_templates}; do
   output_catalog="${catalog_template//-template/}"
-  echo "Rendering ${catalog_template} to ${output_catalog} using a container..."
+  echo "    --> Rendering ${catalog_template} to ${output_catalog} using the opm container..."
 
   podman run --rm -v "$(pwd)":/work:z -v /etc/containers:/etc/containers:ro -w /work "${OPM_IMAGE}" \
     alpha render-template basic "${catalog_template}" \
     -o=yaml > "${output_catalog}"
 
-  echo "Rendering complete for ${output_catalog}"
+  echo "    --> Rendering complete for ${output_catalog}"
 done
 
 # Render newer catalogs (OCP >= 4.17)
 echo ""
-echo "Rendering catalogs for OCP >= 4.17..."
+echo "--> Rendering catalogs for OCP >= 4.17..."
+echo "    (These versions require the --migrate-level=bundle-object-to-csv-metadata flag for compatibility.)"
 new_catalog_templates=$(find . -name "catalog-template-*.yaml" | grep -v -e "4-14" -e "4-15" -e "4-16")
 
 for catalog_template in ${new_catalog_templates}; do
   output_catalog="${catalog_template//-template/}"
-  echo "Rendering ${catalog_template} to ${output_catalog} using a container..."
+  echo "    --> Rendering ${catalog_template} to ${output_catalog} using the opm container..."
 
   podman run --rm -v "$(pwd)":/work:z -v /etc/containers:/etc/containers:ro -w /work "${OPM_IMAGE}" \
     alpha render-template basic "${catalog_template}" \
     -o=yaml --migrate-level=bundle-object-to-csv-metadata > "${output_catalog}"
 
-  echo "Rendering complete for ${output_catalog}"
+  echo "    --> Rendering complete for ${output_catalog}"
 done
 
-echo "All rendering complete."
+echo "--> All rendering complete."
 
 # Decompose the catalog into files for consumability
 echo ""
-echo "Decomposing catalogs into file-based catalogs..."
+echo "--> Decomposing rendered catalogs into file-based catalogs..."
+echo "    (Breaking down the single rendered catalog file into the standard file-based catalog format.)"
 catalogs=$(find . -name "catalog-*.yaml" -not -name "catalog-template*.yaml")
 rm -rf catalog-/
 
@@ -51,7 +54,7 @@ for catalog_file in ${catalogs}; do
   catalog_dir=${catalog_file%\.yaml}
   mkdir -p "${catalog_dir}"/{bundles,channels}
 
-  echo "Decomposing ${catalog_file} into directory for consumability: ${catalog_dir}/ ..."
+  echo "    --> Decomposing ${catalog_file} into directory: ${catalog_dir}/ ..."
 
   # Extract and write the olm.bundle
   bundle_content=$(yq eval 'select(.schema == "olm.bundle")' "${catalog_file}")
@@ -59,7 +62,7 @@ for catalog_file in ${catalogs}; do
     bundle_version=$(echo "${bundle_content}" | yq eval '.properties[] | select(.type == "olm.package").value.version' -)
     bundle_file="${catalog_dir}/bundles/bundle-v${bundle_version}.yaml"
     echo "${bundle_content}" > "${bundle_file}"
-    echo "  - Wrote bundle to ${bundle_file}"
+    echo "      - Wrote bundle to ${bundle_file}"
   fi
 
   # Extract and write the olm.channel
@@ -69,7 +72,7 @@ for catalog_file in ${catalogs}; do
     channel_file="${catalog_dir}/channels/channel-${channel_name}.yaml"
     echo "---" > "${channel_file}"
     echo "${channel_content}" >> "${channel_file}"
-    echo "  - Wrote channel to ${channel_file}"
+    echo "      - Wrote channel to ${channel_file}"
   fi
 
   # Extract and write the olm.package
@@ -77,11 +80,13 @@ for catalog_file in ${catalogs}; do
   if [ -n "$package_content" ]; then
     package_file="${catalog_dir}/package.yaml"
     echo "${package_content}" > "${package_file}"
-    echo "  - Wrote package to ${package_file}"
+    echo "      - Wrote package to ${package_file}"
   fi
 
   rm "${catalog_file}"
 done
+
+echo "--> Decomposition complete."
 
 # Use oldest catalog to populate bundle names for reference
 oldest_catalog=$(find catalog-* -type d | head -1)
@@ -89,11 +94,9 @@ oldest_catalog=$(find catalog-* -type d | head -1)
 for bundle in "${oldest_catalog}"/bundles/*.yaml; do
   bundle_image=$(yq '.image' "${bundle}")
   bundle_name=$(yq '.name' "${bundle}")
-
-  # TODO is this desired? it's from og script
-  #yq '.entries[] |= select(.image == "'"${bundle_image}"'").name = "'"${bundle_name}"'"' -i catalog-template.yaml
 done
 
+echo "--> Sorting the main catalog-template.yaml file..."
 # Sort catalog
 yq '.entries |= (sort_by(.schema, .name) | reverse)' -i catalog-template.yaml
 yq '.entries |=
@@ -101,9 +104,8 @@ yq '.entries |=
    ([(.[] | select(.schema == "olm.channel"))] | sort_by(.name)) +
    ([(.[] | select(.schema == "olm.bundle"))] | sort_by(.name))' -i catalog-template.yaml
 
+echo "--> Replacing development image URLs with production URLs..."
 # Replace the Konflux images with production images
 for file in catalog-*/bundles/*.yaml; do
   sed -i -E 's%quay.io/redhat-user-workloads/[^:@]+%registry.redhat.io/rhacm2/submariner-operator-bundle%g' "${file}"
 done
-
-echo "Decomposition complete."

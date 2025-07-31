@@ -11,9 +11,10 @@ cd "${REPO_ROOT_DIR}"
 echo "--> Generating catalog template..."
 ./scripts/generate-catalog-template.sh
 
-echo "--> Rendering containerized catalog..."
+echo "--> Rendering catalog templates using the opm container..."
 ./scripts/render-catalog-containerized.sh
 
+echo "--> Cleaning up temporary files..."
 ./scripts/cleanup-generated-files.sh
 
 echo "--> Build complete."
