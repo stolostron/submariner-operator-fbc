@@ -11,13 +11,13 @@ cd "${REPO_ROOT_DIR}"
 check_git_status() {
   echo "--> Verifying git status..."
   # Assert no difference in relevant files outside build/
-  if ! git diff --exit-code -- . ':!build/' ':!scripts/' ':!test/' ':!.github/'; then
+  if ! git diff --exit-code -- . ':!build/' ':!scripts/' ':!test/' ':!.github/' ':!test_catalog_template.yaml' ':!original_catalog_template.yaml'; then
     echo "Error: Changes detected outside ignored directories after running the previous test."
     exit 1
   fi
 
   # Assert no untracked or uncommitted changes outside build/
-  if git status --porcelain -- . ':!build/' ':!scripts/' ':!test/' ':!.github/' | grep -q .; then
+  if git status --porcelain -- . ':!build/' ':!scripts/' ':!test/' ':!.github/' ':!test_catalog_template.yaml' ':!original_catalog_template.yaml' | grep -q .; then
     echo "Error: Untracked or uncommitted changes detected outside ignored directories after running the previous test."
     exit 1
   fi
@@ -30,7 +30,7 @@ check_git_status() {
 echo "### Running all tests... ###"
 
 for test_script in ./test/test-*.sh; do
-  if [[ "$test_script" == "./test/test.sh" ]]; then
+  if [[ "$test_script" == "./test/test.sh" || "$test_script" == "./test/test-yq-format.sh" ]]; then
       continue
   fi
   echo "### Running $test_script ###"

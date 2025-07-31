@@ -8,7 +8,7 @@ find . -name "*.yaml" -o -name "*.yml" | while read -r file; do
     echo "Skipping $file..."
     continue
   fi
-  echo "Processing $file..."
+    echo "Processing $file..."
   yq -i '.' "$file"
 done
 

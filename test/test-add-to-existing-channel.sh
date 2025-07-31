@@ -46,7 +46,6 @@ echo "### Testing add-bundle-to-template.sh (Advanced) ###"
 ./scripts/add-bundle-to-template.sh \
   "${TEST_CATALOG_TEMPLATE}" \
   "${TEST_BUNDLE_IMAGE}" \
-  "${TEST_BUNDLE_NAME}" \
   "${TEST_BUNDLE_VERSION}" \
   "${TEST_BUNDLE_CHANNELS}"
 

@@ -31,6 +31,7 @@ fi
 
 # Add bundle
 bundle_entry="
+  name: submariner.${bundle_version}
   image: ${bundle_image}
   schema: olm.bundle
 " yq '.entries += env(bundle_entry)' -i catalog-template.yaml
@@ -59,15 +60,16 @@ for channel in ${bundle_channels//,/ }; do
     echo "    adding first version to entries (no replaces version)"
     channel_entry="
       name: submariner.${bundle_version}
-      skipRange: '>=0.4.0 <${bundle_version#v}'
+      skipRange: '>=0.18.0 <${bundle_version#v}'
     " yq '.entries[] |= select(.schema == "olm.channel") |= select(.name == "'"${channel}"'").entries += env(channel_entry)' -i catalog-template.yaml
   else
-    replaces_version=$(yq '.entries[] | select(.schema == "olm.channel") | select(.name == "'"${channel}"'").entries[-1].name' catalog-template.yaml)
+    replaces_bundle_name=$(yq '.entries[] | select(.schema == "olm.channel") | select(.name == "'"${channel}"'").entries[-1].name' catalog-template.yaml)
+    replaces_version=$(echo "${replaces_bundle_name}" | sed 's/submariner.v//')
     echo "    replaces_version is: ${replaces_version}"
     channel_entry="
       name: submariner.${bundle_version}
-      replaces: ${replaces_version}
-      skipRange: '>=0.4.0 <${bundle_version#v}'
+      replaces: ${replaces_bundle_name}
+      skipRange: '>='${replaces_version}' <${bundle_version#v}'
     " yq '.entries[] |= select(.schema == "olm.channel") |= select(.name == "'"${channel}"'").entries += env(channel_entry)' -i catalog-template.yaml
   fi
 done

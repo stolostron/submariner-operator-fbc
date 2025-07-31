@@ -4,12 +4,12 @@ set -e
 
 catalog_template_path=${1}
 bundle_image=${2}
-bundle_name=${3}
-bundle_version=${4}
-bundle_channels=${5}
+bundle_version=${3}
+bundle_name="submariner.${bundle_version}"
+bundle_channels=${4}
 
-if [[ -z "${catalog_template_path}" || -z "${bundle_image}" || -z "${bundle_name}" || -z "${bundle_version}" || -z "${bundle_channels}" ]]; then
-  echo "error: Missing arguments. Usage: add-bundle-to-template.sh <catalog_template_path> <bundle_image> <bundle_name> <bundle_version> <bundle_channels>"
+if [[ -z "${catalog_template_path}" || -z "${bundle_image}" || -z "${bundle_version}" || -z "${bundle_channels}" ]]; then
+  echo "error: Missing arguments. Usage: add-bundle-to-template.sh <catalog_template_path> <bundle_image> <bundle_version> <bundle_channels>"
   exit 1
 fi
 

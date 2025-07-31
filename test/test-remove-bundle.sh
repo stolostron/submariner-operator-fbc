@@ -28,7 +28,7 @@ entries:
       - name: submariner.v0.21.0-rc0
         skipRange: '>=0.4.0 <0.21.0-rc0'
   - image: test-registry/test-bundle:v0.0.1
-    name: submariner.v0.0.1.abcdefg
+    name: submariner.v0.0.1
     schema: olm.bundle
 EOF
 

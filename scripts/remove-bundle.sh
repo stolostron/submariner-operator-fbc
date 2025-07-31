@@ -10,10 +10,10 @@ if [[ -z "${catalog_template_path}" || -z "${bundle_version}" ]]; then
   exit 1
 fi
 
-bundle_name=$(yq e '.entries[] | select(.schema == "olm.bundle") | select(.name | test(".*'"${bundle_version}"'.*")) | .name' "${catalog_template_path}")
-bundle_image=$(yq e '.entries[] | select(.schema == "olm.bundle") | select(.name | test(".*'"${bundle_version}"'.*")) | .image' "${catalog_template_path}")
+bundle_name="submariner.${bundle_version}"
+bundle_image=$(yq e '.entries[] | select(.schema == "olm.bundle") | select(.name == "'"${bundle_name}"'").image' "${catalog_template_path}")
 
-if [[ -z "${bundle_name}" ]]; then
+if [[ -z "${bundle_image}" ]]; then
   echo "error: Bundle with version ${bundle_version} not found in ${catalog_template_path}"
   exit 1
 fi

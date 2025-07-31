@@ -34,7 +34,6 @@ cp "${TEST_CATALOG_TEMPLATE}" "${ORIGINAL_CATALOG_TEMPLATE}"
 
 # Test data
 TEST_BUNDLE_IMAGE="test-registry/test-bundle:v0.0.1"
-TEST_BUNDLE_NAME="test-submariner.v0.0.1-abcdefg"
 TEST_BUNDLE_VERSION="v0.0.1"
 TEST_BUNDLE_CHANNELS="alpha,beta"
 
@@ -43,7 +42,6 @@ echo "Testing add-bundle-to-template.sh..."
 ./scripts/add-bundle-to-template.sh \
   "${TEST_CATALOG_TEMPLATE}" \
   "${TEST_BUNDLE_IMAGE}" \
-  "${TEST_BUNDLE_NAME}" \
   "${TEST_BUNDLE_VERSION}" \
   "${TEST_BUNDLE_CHANNELS}"
 
