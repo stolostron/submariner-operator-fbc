@@ -10,14 +10,14 @@ cd "${REPO_ROOT_DIR}"
 
 check_git_status() {
   echo "--> Verifying git status..."
-  # Assert no difference in relevant files outside build/
-  if ! git diff --exit-code -- . ':!build/' ':!scripts/' ':!test/' ':!.github/' ':!test_catalog_template.yaml' ':!original_catalog_template.yaml'; then
+  # Assert no difference in relevant files outside of some dirs
+  if ! git diff --exit-code -- . ':!build/' ':!scripts/' ':!test/' ':!.github/'; then
     echo "Error: Changes detected outside ignored directories after running the previous test."
     exit 1
   fi
 
-  # Assert no untracked or uncommitted changes outside build/
-  if git status --porcelain -- . ':!build/' ':!scripts/' ':!test/' ':!.github/' ':!test_catalog_template.yaml' ':!original_catalog_template.yaml' | grep -q .; then
+  # Assert no untracked or uncommitted changes outside of some dirs
+  if git status --porcelain -- . ':!build/' ':!scripts/' ':!test/' ':!.github/' | grep -q .; then
     echo "Error: Untracked or uncommitted changes detected outside ignored directories after running the previous test."
     exit 1
   fi
