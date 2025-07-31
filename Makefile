@@ -6,6 +6,7 @@ GOARCH := $(shell go env GOARCH)
 .PHONY: clean
 clean:
 	-rm -rf bin/
+	./scripts/cleanup-generated-files.sh
 
 OPM = $(LOCAL_BIN)/opm
 
