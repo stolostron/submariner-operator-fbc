@@ -30,7 +30,7 @@ check_git_status() {
 echo "### Running all tests... ###"
 
 for test_script in ./test/test-*.sh; do
-  if [[ "$test_script" == "./test/test.sh" || "$test_script" == "./test/test-yq-format.sh" ]]; then
+  if [[ "$test_script" == "./test/test.sh" ]]; then
       continue
   fi
   echo "### Running $test_script ###"

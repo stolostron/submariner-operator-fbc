@@ -26,13 +26,7 @@ To add a new operator bundle to the catalog, use the `scripts/add-bundle.sh` scr
 ./scripts/add-bundle.sh <bundle_image_tag>
 ```
 
-### Removing a Bundle
 
-To remove an existing operator bundle from the catalog, use the `scripts/remove-bundle.sh` script. This script takes the bundle version to remove as an argument and will remove it from the `catalog-template.yaml`.
-
-```bash
-./scripts/remove-bundle.sh <bundle_version>
-```
 
 ### Fetching a Catalog for Reference
 

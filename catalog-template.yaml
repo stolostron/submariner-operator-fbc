@@ -1,7 +1,7 @@
 #
 # NOTE: This file was originally copied from `handmade-catalog-template-base.yaml`
 # to serve as the starting point for the catalog. It is now managed incrementally
-# by the `add-bundle.sh` and `remove-bundle.sh` scripts.
+# by the `add-bundle.sh` script.
 #
 ---
 entries:

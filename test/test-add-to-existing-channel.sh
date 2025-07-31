@@ -52,27 +52,19 @@ echo "### Testing add-bundle-to-template.sh (Advanced) ###"
 echo "--- After Add --- "
 cat "${TEST_CATALOG_TEMPLATE}"
 
-# --- Run the remove script --- #
-echo "### Testing remove-bundle.sh (Advanced) ###"
-./scripts/remove-bundle.sh \
-  "${TEST_CATALOG_TEMPLATE}" \
-  "${TEST_BUNDLE_VERSION}"
-
 # --- Verification --- #
-echo "--- Original --- "
-cat "${ORIGINAL_CATALOG_TEMPLATE}"
-
-echo "--- After Remove --- "
-cat "${TEST_CATALOG_TEMPLATE}"
-
-# Verify that the file is identical to the original
-if ! diff -q "${ORIGINAL_CATALOG_TEMPLATE}" "${TEST_CATALOG_TEMPLATE}"; then
-  echo "Test failed: The catalog template was modified."
-  diff "${ORIGINAL_CATALOG_TEMPLATE}" "${TEST_CATALOG_TEMPLATE}"
+# Verify that the new bundle was added correctly
+if ! yq '.entries[] | select(.schema == "olm.bundle") | select(.name == "'"${TEST_BUNDLE_NAME}"'")' "${TEST_CATALOG_TEMPLATE}" > /dev/null; then
+  echo "Test failed: New bundle entry not found in ${TEST_CATALOG_TEMPLATE}"
   exit 1
 fi
 
-echo "Test passed: Advanced add and remove bundle worked as expected."
+if ! yq '.entries[] | select(.schema == "olm.channel") | select(.name == "alpha") | .entries[] | select(.name == "'"${TEST_BUNDLE_NAME}"'")' "${TEST_CATALOG_TEMPLATE}" > /dev/null; then
+  echo "Test failed: New bundle not found in alpha channel entries."
+  exit 1
+fi
+
+echo "Test passed: Advanced add bundle worked as expected."
 
 # Cleanup
 rm "${TEST_CATALOG_TEMPLATE}" "${ORIGINAL_CATALOG_TEMPLATE}"
