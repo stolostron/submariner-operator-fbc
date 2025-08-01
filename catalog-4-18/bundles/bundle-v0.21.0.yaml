@@ -1,3 +1,4 @@
+---
 image: registry.redhat.io/rhacm2/submariner-operator-bundle:c34fb2f91b60df48ddbb05c049c3a93fd2d1b295
 name: submariner.v0.21.0
 package: submariner
