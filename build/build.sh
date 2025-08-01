@@ -18,3 +18,13 @@ echo "--> Cleaning up temporary files..."
 ./scripts/cleanup-generated-files.sh
 
 echo "--> Build complete."
+
+echo "
+##################################################"
+echo "## Build Summary"
+echo "##################################################"
+echo "The following catalog directories were generated:"
+for catalog_dir in catalog-*/; do
+  find "${catalog_dir}" -print
+  echo
+done

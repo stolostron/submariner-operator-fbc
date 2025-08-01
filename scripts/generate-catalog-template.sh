@@ -12,6 +12,7 @@ echo "The templates are generated from the base catalog-template.yaml file, and 
 echo "based on the versions defined in drop-versions.json."
 echo
 echo "Using drop version Submariner map:"
+echo "    (Keys are OCP versions, values are the minimum Submariner version to include for that OCP version.)"
 jq '.' drop-versions.json
 
 ocp_versions=$(jq -r 'keys[]' drop-versions.json)
@@ -74,19 +75,26 @@ done
 echo
 
 # Prune old bundles
-echo "# Pruning bundles:"
+echo "# Removing unsupported bundle versions from OCP catalog templates:"
+echo "  This step iterates through each bundle and removes it from specific OCP catalog templates"
+echo "  if its version is older than the minimum supported Submariner version for that OCP."
 for bundle_image in $(yq '.entries[] | select(.schema == "olm.bundle").image' catalog-template.yaml); do
   bundle_version=$(skopeo inspect --override-os=linux --override-arch=amd64 "docker://${bundle_image}" | jq -r ".Labels.version")
   echo "  Processing bundle version: ${bundle_version}"
-  pruned=0
+  pruned_count=0
   for ocp_version in ${ocp_versions}; do
     if shouldPrune "${ocp_version}" "${bundle_version#v}"; then
       echo "  - Pruning bundle ${bundle_version} from OCP ${ocp_version} ..."
       echo "    (image ref: ${bundle_image})"
       yq '.entries[] |= select(.schema == "olm.bundle") |= del(select(.image == "'"${bundle_image}"'"))' -i "catalog-template-${ocp_version//./-}.yaml"
+      ((pruned_count++))
     else
       echo "    - Keeping bundle ${bundle_version} for OCP ${ocp_version}."
-      ((pruned += 1))
     fi
   done
+  if [[ ${pruned_count} -gt 0 ]]; then
+    echo "  Finished processing ${bundle_version}. It was pruned from ${pruned_count} OCP versions."
+  else
+    echo "  Finished processing ${bundle_version}. It was not pruned from any OCP versions."
+  fi
 done
