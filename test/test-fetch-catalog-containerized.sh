@@ -6,11 +6,7 @@ REPO_ROOT_DIR=$(realpath "${SCRIPT_DIR}/..")
 # Run from the repo root
 cd "${REPO_ROOT_DIR}"
 
-# Ensure cleanup happens on exit
-trap './scripts/cleanup-generated-files.sh' EXIT
 
-echo "--> Cleaning up before test..."
-./scripts/cleanup-generated-files.sh
 
 echo "--> Running fetch-catalog-containerized.sh script..."
 ./scripts/fetch-catalog-containerized.sh 4.19 submariner

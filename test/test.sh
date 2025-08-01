@@ -8,10 +8,8 @@ REPO_ROOT_DIR=$(realpath "${SCRIPT_DIR}/..")
 # Run from the repo root
 cd "${REPO_ROOT_DIR}"
 
-
-
-# Cleanup any previous runs
-./scripts/cleanup-generated-files.sh
+# Initial cleanup
+./scripts/reset-test-environment.sh
 
 echo "### Running all tests... ###"
 
@@ -21,10 +19,7 @@ for test_script in ./test/test-*.sh; do
   fi
   echo "### Running $test_script ###"
   "$test_script"
-  ./scripts/check-generated-files-status.sh
+  ./scripts/reset-test-environment.sh
 done
 
 echo "### All tests complete ###"
-
-# Cleanup after run
-./scripts/cleanup-generated-files.sh
