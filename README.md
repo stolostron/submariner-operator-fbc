@@ -29,8 +29,6 @@ To add a new operator bundle to the catalog, use the `scripts/add-bundle.sh` scr
 ./scripts/add-bundle.sh <bundle_image_tag>
 ```
 
-
-
 ### Fetching a Catalog for Reference
 
 To fetch the Submariner operator catalog from a specific OpenShift version for reference, use the `scripts/fetch-catalog-containerized.sh` script. This script takes the OpenShift version and the package name as arguments.
@@ -59,12 +57,12 @@ The following `make` targets are available for use:
 
 | Target | Description |
 | --- | --- |
-| `build-catalogs` | Builds the catalogs for all supported OpenShift versions. |
-| `validate-catalogs` | Validates the generated catalogs using `opm`. |
-| `build-images` | Builds the catalog image. |
-| `run-images` | Runs the catalog image in the background. |
-| `test-images` | Builds, runs, and tests the catalog image. |
-| `stop-images` | Stops the running catalog image. |
-| `test-scripts` | Runs the main test script at `test/test.sh`. |
-| `clean` | Removes the `bin/` directory. |
-| `opm` | Installs the `opm` binary. |
+| `build-catalogs` | Builds the File-Based Catalogs (FBC) for all supported OpenShift versions. This target orchestrates the entire catalog generation process as described in the "Catalog Generation" section. |
+| `validate-catalogs` | Validates the generated File-Based Catalogs (FBC) using the `opm validate` command. This command performs static analysis and linting of the catalog's declarative configuration files (packages, channels, and bundles) to ensure they are well-formed, adhere to Operator Framework specifications, and have correct references. |
+| `build-images` | Builds the OCI (Open Container Initiative) image for the generated catalog. This image can then be used to serve the catalog. |
+| `run-images` | Runs the built catalog OCI image in the background, exposing it on a local port (e.g., 50051) for testing and interaction. |
+| `test-images` | Performs a comprehensive test of the built catalog OCI image. This includes running the image, verifying its availability, and validating the package list it serves. |
+| `stop-images` | Stops any running catalog OCI image instances. |
+| `test-scripts` | Executes the main test script (`test/test.sh`), which runs a suite of tests for the catalog management scripts and generated content. |
+| `clean` | Removes generated build artifacts and temporary files, including the `bin/` directory and `catalog-template-4-*.yaml` and `catalog-4-*.yaml` files. |
+| `opm` | Installs the `opm` (Operator Package Manager) binary, a command-line tool used for building, managing, and serving OLM catalogs. |
