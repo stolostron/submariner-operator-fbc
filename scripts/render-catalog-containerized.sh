@@ -60,6 +60,11 @@ for catalog_file in ${catalogs}; do
   bundle_content=$(yq eval 'select(.schema == "olm.bundle")' "${catalog_file}")
   if [ -n "$bundle_content" ]; then
     bundle_version=$(echo "${bundle_content}" | yq eval '.properties[] | select(.type == "olm.package").value.version' -)
+    if [[ "$bundle_version" == *"---"* ]]; then
+      echo "Error: bundle_version contains ---. This is likely due to multiple YAML documents being processed."
+      echo "bundle_version: $bundle_version"
+      exit 1
+    fi
     bundle_file="${catalog_dir}/bundles/bundle-v${bundle_version}.yaml"
     echo "${bundle_content}" > "${bundle_file}"
     echo "      - Wrote bundle to ${bundle_file}"
@@ -69,6 +74,11 @@ for catalog_file in ${catalogs}; do
   channel_content=$(yq eval 'select(.schema == "olm.channel")' "${catalog_file}")
   if [ -n "$channel_content" ]; then
     channel_name=$(echo "${channel_content}" | yq eval '.name' -)
+    if [[ "$channel_name" == *"---"* ]]; then
+      echo "Error: channel_name contains ---. This is likely due to multiple YAML documents being processed."
+      echo "channel_name: $channel_name"
+      exit 1
+    fi
     channel_file="${catalog_dir}/channels/channel-${channel_name}.yaml"
     echo "---" > "${channel_file}"
     echo "${channel_content}" >> "${channel_file}"
