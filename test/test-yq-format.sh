@@ -1,5 +1,7 @@
 #!/bin/bash
 
+./scripts/reset-test-environment.sh
+
 echo "Running yq -i '.' on all YAML files and checking for changes..."
 
 # Find all YAML files and apply yq -i '.'

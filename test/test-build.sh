@@ -1,5 +1,7 @@
 #!/bin/bash
 
+./scripts/reset-test-environment.sh
+
 SCRIPT_DIR=$( cd -- "$( dirname -- "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )
 REPO_ROOT_DIR=$(realpath "${SCRIPT_DIR}/..")
 
