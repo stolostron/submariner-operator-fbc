@@ -66,3 +66,29 @@ The following `make` targets are available for use:
 | `test-scripts` | Executes the main test script (`test/test.sh`), which runs a suite of tests for the catalog management scripts and generated content. |
 | `clean` | Removes generated build artifacts and temporary files, including the `bin/` directory and `catalog-template-4-*.yaml` and `catalog-4-*.yaml` files. |
 | `opm` | Installs the `opm` (Operator Package Manager) binary, a command-line tool used for building, managing, and serving OLM catalogs. |
+
+## TODOs
+
+*   **Channel Naming Convention:** We need to clarify the correct channel naming convention for the Submariner operator.
+    *   The `submariner-catalog-config-4.19.yaml` from the index container and the current downstream bundle both use `stable`.
+        ```
+        submariner-catalog-config-4.19.yaml:
+        entries:
+        - defaultChannel: stable-0.20
+        ```
+        ```
+        distgit/containers/submariner-operator-bundle/render_vars.in:
+        export BUNDLE_DEFAULT_CHANNEL="stable-${CI_X_VERSION}.${CI_Y_VERSION}"
+        export BUNDLE_CHANNELS="stable-${CI_X_VERSION}.${CI_Y_VERSION}"
+        ```
+    *   However, the upstream bundle uses `alpha`.
+        ```
+        bundle.Dockerfile.konflux:
+        LABEL operators.operatorframework.io.bundle.channel.default.v1=alpha-0.21
+        ```
+        ```
+        bundle.Dockerfile:
+        LABEL operators.operatorframework.io.bundle.channels.v1=alpha-0.21
+        LABEL operators.operatorframework.io.bundle.channel.default.v1=alpha-0.21
+        ```
+    We need to determine which channel (`alpha` or `stable`) should be used consistently.
