@@ -23,10 +23,10 @@ This repository provides scripts to manage the catalog content incrementally. Th
 
 ### Adding a Bundle
 
-To add a new operator bundle to the catalog, use the `scripts/add-bundle.sh` script. This script takes the bundle image tag as an argument and will add it to the `catalog-template.yaml`.
+To add a new operator bundle to the catalog, use the `make add-bundle` target. This target takes the `BUNDLE_IMAGE` variable as an argument and will add the specified bundle to the `catalog-template.yaml`.
 
 ```bash
-./scripts/add-bundle.sh <bundle_image_tag>
+make add-bundle BUNDLE_IMAGE=quay.io/my-bundle:latest
 ```
 
 ### Fetching a Catalog for Reference

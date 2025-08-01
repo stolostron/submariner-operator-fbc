@@ -125,3 +125,7 @@ test-images: test-image
 test-scripts:
 	./test/test.sh
 test-script: test-scripts
+
+.PHONY: add-bundle
+add-bundle:
+	./build/add-bundle.sh $(BUNDLE_IMAGE)
