@@ -56,45 +56,41 @@ for catalog_file in ${catalogs}; do
 
   echo "    --> Decomposing ${catalog_file} into directory: ${catalog_dir}/ ..."
 
-  # Extract and write the olm.bundle
-  bundle_content=$(yq eval 'select(.schema == "olm.bundle")' "${catalog_file}")
-  if [ -n "$bundle_content" ]; then
-    bundle_version=$(echo "${bundle_content}" | yq eval '.properties[] | select(.type == "olm.package").value.version' -)
-    if [[ "$bundle_version" == *"---"* ]]; then
-      echo "Error: bundle_version contains ---. This is likely due to multiple YAML documents being processed."
-      echo "bundle_version: $bundle_version"
-      exit 1
-    fi
-    bundle_file="${catalog_dir}/bundles/bundle-v${bundle_version}.yaml"
-    echo "${bundle_content}" > "${bundle_file}"
-    echo "      - Wrote bundle to ${bundle_file}"
-  fi
+  # Split the multi-document YAML file into individual files
+  csplit -s -f "${catalog_dir}/doc" "${catalog_file}" /---/ "{*}"
 
-  # Extract and write the olm.channel
-  channel_content=$(yq eval 'select(.schema == "olm.channel")' "${catalog_file}")
-  if [ -n "$channel_content" ]; then
-    channel_name=$(echo "${channel_content}" | yq eval '.name' -)
-    if [[ "$channel_name" == *"---"* ]]; then
-      echo "Error: channel_name contains ---. This is likely due to multiple YAML documents being processed."
-      echo "channel_name: $channel_name"
-      exit 1
+  for doc_file in "${catalog_dir}"/doc*;
+  do
+    # if the file is empty, remove it
+    if [ ! -s "${doc_file}" ]; then
+      rm "${doc_file}"
+      continue
     fi
-    channel_file="${catalog_dir}/channels/channel-${channel_name}.yaml"
-    echo "---" > "${channel_file}"
-    echo "${channel_content}" >> "${channel_file}"
-    echo "      - Wrote channel to ${channel_file}"
-  fi
 
-  # Extract and write the olm.package
-  package_content=$(yq eval 'select(.schema == "olm.package")' "${catalog_file}")
-  if [ -n "$package_content" ]; then
-    package_file="${catalog_dir}/package.yaml"
-    echo "${package_content}" > "${package_file}"
-    echo "      - Wrote package to ${package_file}"
-  fi
+    schema=$(yq eval '.schema' "${doc_file}")
+
+    if [[ "${schema}" == "olm.bundle" ]]; then
+      bundle_version=$(yq eval '.properties[] | select(.type == "olm.package").value.version' "${doc_file}")
+      bundle_file="${catalog_dir}/bundles/bundle-v${bundle_version}.yaml"
+      mv "${doc_file}" "${bundle_file}"
+      echo "      - Wrote bundle to ${bundle_file}"
+    elif [[ "${schema}" == "olm.channel" ]]; then
+      channel_name=$(yq eval '.name' "${doc_file}")
+      channel_file="${catalog_dir}/channels/channel-${channel_name}.yaml"
+      mv "${doc_file}" "${channel_file}"
+      echo "      - Wrote channel to ${channel_file}"
+    elif [[ "${schema}" == "olm.package" ]]; then
+      package_file="${catalog_dir}/package.yaml"
+      mv "${doc_file}" "${package_file}"
+      echo "      - Wrote package to ${package_file}"
+    else
+      rm "${doc_file}"
+    fi
+  done
 
   rm "${catalog_file}"
 done
+
 
 echo "--> Decomposition complete."
 

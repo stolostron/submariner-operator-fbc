@@ -18,6 +18,9 @@ echo "--> Generating catalog template..."
 echo "--> Rendering catalog templates using the opm container..."
 ./scripts/render-catalog-containerized.sh
 
+echo "--> Formatting YAML files..."
+./scripts/format-yaml.sh
+
 echo "--> Build complete."
 
 echo "--> Cleaning up intermediate catalog templates..."

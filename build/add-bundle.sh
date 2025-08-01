@@ -73,3 +73,5 @@ for channel in ${bundle_channels//,/ }; do
     " yq '.entries[] |= select(.schema == "olm.channel") |= select(.name == "'"${channel}"'").entries += env(channel_entry)' -i catalog-template.yaml
   fi
 done
+
+./scripts/format-yaml.sh
