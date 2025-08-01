@@ -8,6 +8,10 @@ REPO_ROOT_DIR=$(realpath "${SCRIPT_DIR}/..")
 # Run from the repo root
 cd "${REPO_ROOT_DIR}"
 
+# Clean up previous build artifacts
+echo "--> Cleaning up previous build artifacts (catalog-*/ directories)..."
+rm -rf catalog-*/
+
 echo "--> Generating catalog template..."
 ./scripts/generate-catalog-template.sh
 
