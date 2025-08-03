@@ -1,0 +1,2 @@
+bundle_image_urls:
+  - "quay.io/redhat-user-workloads/submariner-tenant/submariner-bundle-0-21@sha256:bad7ce0c4a3edcb12dc3adf3e4165bd57631c06bc81ed9b507377b12e73f905c"
