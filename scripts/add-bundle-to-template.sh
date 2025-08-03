@@ -39,3 +39,21 @@ for channel in ${bundle_channels//,/ }; do
     yq '.entries[] |= select(.schema == "olm.channel") |= select(.name == "'"${channel}"'").entries += {"name": "'"${bundle_name}"'", "replaces": "'"${replaces_version}"'", "skipRange": ">= ${bundle_version#v} <${bundle_version#v}"}' -i "${catalog_template_path}"
   fi
 done
+
+# Verify that the bundle is added to the catalog-template.yaml
+if ! yq e '.entries[] | select(.schema == "olm.bundle") | select(.image == "'"${bundle_image}"'")' "${catalog_template_path}" > /dev/null; then
+    echo "Error: Bundle '"${bundle_image}"' was NOT found in catalog-template.yaml. Test failed."
+    exit 1
+fi
+
+echo "Verification: Bundle '"${bundle_image}"' successfully found in catalog-template.yaml."
+
+# Verify that the bundle is added to the correct channels
+for channel in ${bundle_channels//,/ }; do
+    echo "Verifying bundle '"${bundle_name}"' presence in channel '"${channel}"'..."
+    if ! yq e '.entries[] | select(.schema == "olm.channel") | select(.name == "'"${channel}"'").entries[] | select(.name == "'"${bundle_name}"'")' "${catalog_template_path}" > /dev/null; then
+        echo "Error: Bundle '"${bundle_name}"' was NOT found in channel '"${channel}"'. Test failed."
+        exit 1
+    fi
+    echo "Verification: Bundle '"${bundle_name}"' successfully found in channel '"${channel}"'."
+done
