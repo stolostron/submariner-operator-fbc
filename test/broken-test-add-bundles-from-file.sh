@@ -2,6 +2,10 @@
 
 set -euo pipefail
 
+echo "This is a known-failing test that demonstrates a bug in the upstream bundle."
+echo "The bundle has a version mismatch between its image label and its internal CSV metadata."
+echo "This script is expected to fail at the 'opm validate' step."
+
 ./scripts/reset-test-environment.sh
 
 # Settings
@@ -60,3 +64,11 @@ yq -r '.bundle_image_urls[]' "${BUNDLE_IMAGES_FILE}" | while read -r bundle_imag
 done
 
 echo "Successfully added all bundles and built catalogs."
+
+echo "The following validation is expected to fail."
+echo "The 'add-bundle.sh' script uses the bundle image label version (e.g., v0.21.0-rc0) to create the channel entry."
+echo "However, the 'opm render' command uses the internal CSV version (e.g., v0.21.0) to name the bundle."
+echo "This mismatch causes the validation to fail because the channel entry points to a non-existent bundle name."
+
+# Validate the generated catalogs
+make validate-catalogs

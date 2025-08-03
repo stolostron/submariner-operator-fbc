@@ -69,6 +69,8 @@ The following `make` targets are available for use:
 
 ## TODOs
 
+*   **Fix Bundle Version Inconsistency:** There is a known bug in some upstream bundles where the version in the image label (e.g., `v0.21.0-rc0`) does not match the version in the internal CSV metadata (e.g., `v0.21.0`). This causes the `opm validate` command to fail. A failing test case that demonstrates this issue can be found at `test/broken-test-add-bundles-from-file.sh`. This test should be moved out of the `broken-` directory and into the main test suite once the upstream bundle is fixed.
+
 *   **Channel Naming Convention:** We need to clarify the correct channel naming convention for the Submariner operator.
     *   The `submariner-catalog-config-4.19.yaml` from the index container and the current downstream bundle both use `stable`.
         ```
