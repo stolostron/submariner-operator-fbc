@@ -20,7 +20,7 @@ cd "$BASE_DIR"
 # Check if an image ID/name was provided as an argument
 if [ -z "$1" ]; then
   echo "❌ Error: No image specified."
-  echo "Usage: ./image_extract.sh <image_name:tag | image_id>"
+  echo "Usage: ./image-extract.sh <image_name:tag | image_id>"
   exit 1
 fi
 

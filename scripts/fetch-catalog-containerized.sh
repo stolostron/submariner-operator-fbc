@@ -28,7 +28,7 @@ catalog_image=registry.redhat.io/redhat/redhat-operator-index:v${ocp_version}
 # Pull the catalog from the image
 ./scripts/image_extract.sh "${catalog_image}" "${TEMP_EXTRACT_DIR}"
 
-# The image_extract.sh script extracts the image to a directory named after the image ID.
+# The image-extract.sh script extracts the image to a directory named after the image ID.
 # We need to determine that directory name.
 DIR_NAME=$(echo "${catalog_image}" | sed -e 's/[^a-zA-Z0-9._-]/_/g')
 EXTRACTED_CATALOG_PATH="${TEMP_EXTRACT_DIR}/${DIR_NAME}"
