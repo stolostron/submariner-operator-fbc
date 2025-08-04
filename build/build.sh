@@ -15,8 +15,8 @@ rm -rf catalog-*/
 echo "--> Generating catalog template..."
 ./scripts/generate-catalog-template.sh
 
-echo "--> Rendering catalog templates using the opm container..."
-./scripts/render-catalog-containerized.sh
+echo "--> Rendering catalog templates..."
+./scripts/render-catalog.sh
 
 echo "--> Formatting YAML files..."
 ./scripts/format-yaml.sh

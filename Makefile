@@ -44,7 +44,7 @@ build-image:
 build-images: build-image
 
 .PHONY: build-catalog build-catalogs
-build-catalogs:
+build-catalogs: opm
 	./build/build.sh
 build-catalog: build-catalogs
 

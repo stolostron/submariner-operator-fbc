@@ -6,8 +6,6 @@ if [[ $(basename "${PWD}") != "submariner-operator-fbc" ]]; then
   exit 1
 fi
 
-OPM_IMAGE="quay.io/operator-framework/opm:latest"
-
 # Render older catalogs (OCP <= 4.16)
 echo "--> Rendering catalogs for OCP <= 4.16..."
 echo "    (These versions do not require any special rendering flags.)"
@@ -15,11 +13,9 @@ old_catalog_templates=$(find . -name "catalog-template-*.yaml" | grep -e "4-14" 
 
 for catalog_template in ${old_catalog_templates}; do
   output_catalog="${catalog_template//-template/}"
-  echo "    --> Rendering ${catalog_template} to ${output_catalog} using the opm container..."
+  echo "    --> Rendering ${catalog_template} to ${output_catalog}..."
 
-  podman run --rm -v "$(pwd)":/work:z -v /etc/containers:/etc/containers:ro -w /work "${OPM_IMAGE}" \
-    alpha render-template basic "${catalog_template}" \
-    -o=yaml > "${output_catalog}"
+  DOCKER_CONFIG=~/.docker/ opm alpha render-template basic "${catalog_template}" -o=yaml > "${output_catalog}"
 
   echo "    --> Rendering complete for ${output_catalog}"
 done
@@ -32,11 +28,9 @@ new_catalog_templates=$(find . -name "catalog-template-*.yaml" | grep -v -e "4-1
 
 for catalog_template in ${new_catalog_templates}; do
   output_catalog="${catalog_template//-template/}"
-  echo "    --> Rendering ${catalog_template} to ${output_catalog} using the opm container..."
+  echo "    --> Rendering ${catalog_template} to ${output_catalog}..."
 
-  podman run --rm -v "$(pwd)":/work:z -v /etc/containers:/etc/containers:ro -w /work "${OPM_IMAGE}" \
-    alpha render-template basic "${catalog_template}" \
-    -o=yaml --migrate-level=bundle-object-to-csv-metadata > "${output_catalog}"
+  DOCKER_CONFIG=~/.docker/ opm alpha render-template basic "${catalog_template}" -o=yaml --migrate-level=bundle-object-to-csv-metadata > "${output_catalog}"
 
   echo "    --> Rendering complete for ${output_catalog}"
 done
