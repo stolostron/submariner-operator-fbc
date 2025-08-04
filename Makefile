@@ -122,7 +122,7 @@ test-image: run-image grpcurl
 test-images: test-image
 
 .PHONY: test-script test-scripts
-test-scripts:
+test-scripts: opm
 	./test/test.sh
 test-script: test-scripts
 
