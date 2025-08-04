@@ -3,6 +3,11 @@
 # Exit immediately if a command fails
 set -e
 
+if [[ "${SKIP_AUTH_TESTS:-false}" = "true" ]]; then
+  echo "Skipping image-extract.sh as SKIP_AUTH_TESTS is set to true."
+  exit 0
+fi
+
 # --- Configuration ---
 # The base directory where subdirectories for images will be created.
 BASE_DIR="."
