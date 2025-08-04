@@ -8,6 +8,8 @@ if [[ $(basename "${PWD}") != "submariner-operator-fbc" ]]; then
 fi
 
 bundle_image=${1}
+replaces=${2}
+skip_range=${3}
 
 if [[ -z "${bundle_image}" ]]; then
   echo "error: the bundle image to be added must be provided as a positional argument."
@@ -63,13 +65,22 @@ for channel in ${bundle_channels//,/ }; do
       skipRange: '>=0.18.0 <${bundle_version#v}'
     " yq '.entries[] |= select(.schema == "olm.channel") |= select(.name == "'"${channel}"'").entries += env(channel_entry)' -i catalog-template.yaml
   else
-    replaces_bundle_name=$(yq '.entries[] | select(.schema == "olm.channel") | select(.name == "'"${channel}"'").entries[-1].name' catalog-template.yaml)
+    if [[ -z "${replaces}" ]]; then
+      replaces_bundle_name=$(yq '.entries[] | select(.schema == "olm.channel") | select(.name == "'"${channel}"'").entries[-1].name' catalog-template.yaml)
+    else
+      replaces_bundle_name=${replaces}
+    fi
     replaces_version=$(echo "${replaces_bundle_name}" | sed 's/submariner.v//')
     echo "    replaces_version is: ${replaces_version}"
+    if [[ -z "${skip_range}" ]]; then
+      skip_range_val=">=${replaces_version} <${bundle_version#v}"
+    else
+      skip_range_val=${skip_range}
+    fi
     channel_entry="
       name: submariner.${bundle_version}
       replaces: ${replaces_bundle_name}
-      skipRange: '>='${replaces_version}' <${bundle_version#v}'
+      skipRange: '${skip_range_val}'
     " yq '.entries[] |= select(.schema == "olm.channel") |= select(.name == "'"${channel}"'").entries += env(channel_entry)' -i catalog-template.yaml
   fi
 done
