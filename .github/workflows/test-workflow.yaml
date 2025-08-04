@@ -12,4 +12,6 @@ jobs:
           wget https://github.com/mikefarah/yq/releases/latest/download/yq_linux_amd64 -O /usr/local/bin/yq
           chmod +x /usr/local/bin/yq
       - name: Run test script
+        env:
+          SKIP_AUTH_TESTS: true
         run: make test-scripts

@@ -1,6 +1,11 @@
 #!/bin/bash
 set -euo pipefail
 
+if [[ "${SKIP_AUTH_TESTS:-false}" = "true" ]]; then
+  echo "Skipping test-add-historical-bundles.sh as SKIP_AUTH_TESTS is set to true."
+  exit 0
+fi
+
 ./scripts/reset-test-environment.sh
 
 SCRIPT_DIR=$( cd -- "$( dirname -- "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )
