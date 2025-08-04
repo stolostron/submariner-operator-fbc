@@ -15,7 +15,7 @@ for catalog_template in ${old_catalog_templates}; do
   output_catalog="${catalog_template//-template/}"
   echo "    --> Rendering ${catalog_template} to ${output_catalog}..."
 
-  DOCKER_CONFIG=~/.docker/ opm alpha render-template basic "${catalog_template}" -o=yaml > "${output_catalog}"
+  DOCKER_CONFIG=~/.docker/ ./bin/opm alpha render-template basic "${catalog_template}" -o=yaml > "${output_catalog}"
 
   echo "    --> Rendering complete for ${output_catalog}"
 done
@@ -30,7 +30,7 @@ for catalog_template in ${new_catalog_templates}; do
   output_catalog="${catalog_template//-template/}"
   echo "    --> Rendering ${catalog_template} to ${output_catalog}..."
 
-  DOCKER_CONFIG=~/.docker/ opm alpha render-template basic "${catalog_template}" -o=yaml --migrate-level=bundle-object-to-csv-metadata > "${output_catalog}"
+  DOCKER_CONFIG=~/.docker/ ./bin/opm alpha render-template basic "${catalog_template}" -o=yaml --migrate-level=bundle-object-to-csv-metadata > "${output_catalog}"
 
   echo "    --> Rendering complete for ${output_catalog}"
 done
