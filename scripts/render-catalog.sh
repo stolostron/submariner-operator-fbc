@@ -6,6 +6,8 @@ if [[ $(basename "${PWD}") != "submariner-operator-fbc" ]]; then
   exit 1
 fi
 
+OPM_IMAGE="quay.io/operator-framework/opm:latest"
+
 # Render older catalogs (OCP <= 4.16)
 echo "--> Rendering catalogs for OCP <= 4.16..."
 echo "    (These versions do not require any special rendering flags.)"
@@ -15,7 +17,21 @@ for catalog_template in ${old_catalog_templates}; do
   output_catalog="${catalog_template//-template/}"
   echo "    --> Rendering ${catalog_template} to ${output_catalog}..."
 
-  DOCKER_CONFIG=~/.docker/ ./bin/opm alpha render-template basic "${catalog_template}" -o=yaml > "${output_catalog}"
+  # Check if the template contains registry.redhat.io URLs, which require auth.
+  # If found, use the local `opm` with authentication as I haven't got that working in a contaienr.
+  # NOTE: Running `opm` locally may fail in some environments with DNS errors
+  # like `dial tcp: lookup quay.io on [::1]:53: read: connection refused`.
+  # In such cases, inside a container works for quay.
+  # For me, I have to be on my non-RH VPN for it to work (not RH VPN or no VPN).
+  if grep -q "registry.redhat.io" "${catalog_template}"; then
+    echo "    --> Found registry.redhat.io URL, using local opm with auth..."
+    DOCKER_CONFIG=~/.docker/ ./bin/opm alpha render-template basic "${catalog_template}" -o=yaml > "${output_catalog}"
+  else
+    echo "    --> No private registries detected, using podman..."
+    podman run --rm -v "$(pwd)":/work:z -v /etc/containers:/etc/containers:ro -w /work "${OPM_IMAGE}" \
+      alpha render-template basic "${catalog_template}" \
+      -o=yaml > "${output_catalog}"
+  fi
 
   echo "    --> Rendering complete for ${output_catalog}"
 done
@@ -30,7 +46,21 @@ for catalog_template in ${new_catalog_templates}; do
   output_catalog="${catalog_template//-template/}"
   echo "    --> Rendering ${catalog_template} to ${output_catalog}..."
 
-  DOCKER_CONFIG=~/.docker/ ./bin/opm alpha render-template basic "${catalog_template}" -o=yaml --migrate-level=bundle-object-to-csv-metadata > "${output_catalog}"
+  # Check if the template contains registry.redhat.io URLs, which require auth.
+  # If found, use the local `opm` with authentication as I haven't got that working in a contaienr.
+  # NOTE: Running `opm` locally may fail in some environments with DNS errors
+  # like `dial tcp: lookup quay.io on [::1]:53: read: connection refused`.
+  # In such cases, inside a container works for quay.
+  # For me, I have to be on my non-RH VPN for it to work (not RH VPN or no VPN).
+  if grep -q "registry.redhat.io" "${catalog_template}"; then
+    echo "    --> Found registry.redhat.io URL, using local opm with auth..."
+    DOCKER_CONFIG=~/.docker/ ./bin/opm alpha render-template basic "${catalog_template}" -o=yaml --migrate-level=bundle-object-to-csv-metadata > "${output_catalog}"
+  else
+    echo "    --> No private registries detected, using podman..."
+    podman run --rm -v "$(pwd)":/work:z -v /etc/containers:/etc/containers:ro -w /work "${OPM_IMAGE}" \
+      alpha render-template basic "${catalog_template}" \
+      -o=yaml --migrate-level=bundle-object-to-csv-metadata > "${output_catalog}"
+  fi
 
   echo "    --> Rendering complete for ${output_catalog}"
 done
