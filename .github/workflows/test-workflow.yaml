@@ -1,5 +1,8 @@
 name: Run Test Script
-on: [push, pull_request]
+on:
+  push:
+    branches: [main]
+  pull_request:
 jobs:
   run-test:
     runs-on: ubuntu-latest
