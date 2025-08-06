@@ -1,6 +1,9 @@
 ---
 entries:
+  - name: submariner.v0.20.0
+    skipRange: '>=0.18.0 <0.20.0'
   - name: submariner.v0.20.1
+    replaces: submariner.v0.20.0
     skipRange: '>=0.18.0 <0.20.1'
 name: stable-0.20
 package: submariner
