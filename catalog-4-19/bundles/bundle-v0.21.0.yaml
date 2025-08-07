@@ -1,5 +1,5 @@
 ---
-image: registry.redhat.io/rhacm2/submariner-operator-bundle:c34fb2f91b60df48ddbb05c049c3a93fd2d1b295
+image: registry.redhat.io/rhacm2/submariner-operator-bundle@sha256:d9549ab0830d3653ddbb8431d1c6d56775ec47ada2df1778b67846b7f744a998
 name: submariner.v0.21.0
 package: submariner
 properties:
@@ -58,7 +58,7 @@ properties:
                 "globalnetEnabled": false,
                 "namespace": "submariner-operator",
                 "repository": "quay.io/submariner",
-                "version": "release-0.21-7a0f64e98720"
+                "version": "v0.21.0-rc0"
               }
             },
             {
@@ -92,7 +92,7 @@ properties:
                 "repository": "quay.io/submariner",
                 "serviceCIDR": "192.168.66.0/24",
                 "serviceDiscoveryEnabled": true,
-                "version": "release-0.21-7a0f64e98720"
+                "version": "v0.21.0-rc0"
               }
             }
           ]
@@ -100,7 +100,7 @@ properties:
         categories: Networking
         certified: "false"
         containerImage: $(SUBMARINER_OPERATOR_IMAGE)
-        createdAt: "2025-07-24 00:12:45"
+        createdAt: "2025-08-05 21:47:50"
         description: Creates and manages Submariner deployments.
         features.operators.openshift.io/disconnected: "false"
         features.operators.openshift.io/fips-compliant: "false"
@@ -110,7 +110,7 @@ properties:
         features.operators.openshift.io/token-auth-azure: "false"
         features.operators.openshift.io/token-auth-gcp: "false"
         operatorframework.io/suggested-namespace: submariner-operator
-        operators.openshift.io/valid-subscription: '["TODO", "foo"]'
+        operators.openshift.io/valid-subscription: '["OpenShift Platform Plus"]'
         operators.operatorframework.io/builder: operator-sdk-v1.40.0
         operators.operatorframework.io/project_layout: go.kubebuilder.io/v4
         repository: https://github.com/submariner-io/submariner-operator
@@ -597,7 +597,7 @@ properties:
       provider:
         name: submariner.io
 relatedImages:
-  - image: registry.redhat.io/rhacm2/submariner-operator-bundle:c34fb2f91b60df48ddbb05c049c3a93fd2d1b295
+  - image: registry.redhat.io/rhacm2/submariner-operator-bundle@sha256:d9549ab0830d3653ddbb8431d1c6d56775ec47ada2df1778b67846b7f744a998
     name: ""
   - image: registry.redhat.io/rhacm2/lighthouse-agent-rhel9@sha256:6b4d34e7a40b21cf464e2f42cef21ef72a69ae8a3f4e7600a7bd85aa689117d9
     name: lighthouse-agent
