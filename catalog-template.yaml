@@ -11,6 +11,12 @@ entries:
       mediatype: image/svg+xml
     name: submariner
     schema: olm.package
+  - name: stable-0.19
+    package: submariner
+    schema: olm.channel
+    entries:
+      - name: submariner.v0.19.4
+        skipRange: '>=0.17.0 <0.19.4'
   - name: stable-0.20
     package: submariner
     schema: olm.channel
@@ -27,6 +33,9 @@ entries:
     package: submariner
     schema: olm.channel
   - image: quay.io/redhat-user-workloads/submariner-tenant/submariner-bundle-0-21@sha256:3f5cb73cb2f55f3641eb35388275076cdf16305d0ca83ff0060240bab11ba692
+    schema: olm.bundle
+  - name: submariner.v0.19.4
+    image: registry.redhat.io/rhacm2/submariner-operator-bundle@sha256:f6de1136ced78ddf1ff48fdadc259c251919dd3a70819fe0e9247411999d51f3
     schema: olm.bundle
   - name: submariner.v0.20.0
     image: registry.redhat.io/rhacm2/submariner-operator-bundle@sha256:dcf3e8552e6818c1dad859d7bda6aa790bbe525f6d6314264634b73825921763
