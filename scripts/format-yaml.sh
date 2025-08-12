@@ -13,7 +13,7 @@ echo "Running yq -i '.' on all YAML files to standardize formatting..."
 # Find all YAML files and apply yq -i '.'
 find . -type f \( -name "*.yaml" -o -name "*.yml" \) -not -path "./.tekton/*" -print0 | while IFS= read -r -d $'\0' file; do
   # The config file is intentionally not well-formed yaml, so we skip it
-  if [[ "$file" == *"/submariner-catalog-config-4.19.yaml" ]]; then
+  if [[ "$file" == *"/submariner-catalog-config-"*".yaml" ]]; then
     echo "Skipping $file..."
     continue
   fi
