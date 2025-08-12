@@ -15,16 +15,20 @@ REPO_ROOT_DIR=$(realpath "${SCRIPT_DIR}/..")
 # Run from the repo root
 cd "${REPO_ROOT_DIR}"
 
-
+OUTPUT_DIR="extracted-catalogs"
+mkdir -p "${OUTPUT_DIR}"
 
 echo "--> Running fetch-catalog-containerized.sh script..."
 ./scripts/fetch-catalog-containerized.sh 4.19 submariner
 
+# Move the generated YAML to the output directory
+mv submariner-catalog-config-4.19.yaml "${OUTPUT_DIR}/"
+
 echo "--> Verifying output..."
 
-# Check that catalog-template.yaml was created
-if [[ ! -f "catalog-template.yaml" ]]; then
-  echo "Error: catalog-template.yaml was not generated."
+# Check that the catalog file was created in the output directory
+if [[ ! -f "${OUTPUT_DIR}/submariner-catalog-config-4.19.yaml" ]]; then
+  echo "Error: submariner-catalog-config-4.19.yaml was not generated in ${OUTPUT_DIR}."
   exit 1
 fi
-echo "  [SUCCESS] catalog-template.yaml was generated."
+echo "  [SUCCESS] submariner-catalog-config-4.19.yaml was generated in ${OUTPUT_DIR}."
