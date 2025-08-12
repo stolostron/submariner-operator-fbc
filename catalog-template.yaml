@@ -31,7 +31,10 @@ entries:
         replaces: submariner.v0.18.2
         skipRange: '>=0.16.0 <0.18.3'
       - name: submariner.v0.18.2
+        replaces: submariner.v0.18.0
         skipRange: '>=0.16.0 <0.18.2'
+      - name: submariner.v0.18.0
+        skipRange: '>=0.16.0 <0.18.0'
   - name: stable-0.19
     package: submariner
     schema: olm.channel
@@ -66,6 +69,9 @@ entries:
     schema: olm.bundle
   - name: submariner.v0.17.6
     image: registry.redhat.io/rhacm2/submariner-operator-bundle@sha256:470d07435a5d450c39d80201ec735f23f4c9c031575ff51880fdcf3e955d2d3c
+    schema: olm.bundle
+  - name: submariner.v0.18.0
+    image: registry.redhat.io/rhacm2/submariner-operator-bundle@sha256:9da58fe8e7045298be9b5d2c0a58a9abe11c8ff0a33439859c176c8b07407610
     schema: olm.bundle
   - name: submariner.v0.18.2
     image: registry.redhat.io/rhacm2/submariner-operator-bundle@sha256:002a7a163853bd12b8403c163c9a3c9b157a50e3d2622f3beb578d3bbd144c76
