@@ -1,0 +1,601 @@
+---
+image: registry.redhat.io/rhacm2/submariner-operator-bundle@sha256:002a7a163853bd12b8403c163c9a3c9b157a50e3d2622f3beb578d3bbd144c76
+name: submariner.v0.18.2
+package: submariner
+properties:
+  - type: olm.gvk
+    value:
+      group: submariner.io
+      kind: Broker
+      version: v1alpha1
+  - type: olm.gvk
+    value:
+      group: submariner.io
+      kind: ServiceDiscovery
+      version: v1alpha1
+  - type: olm.gvk
+    value:
+      group: submariner.io
+      kind: Submariner
+      version: v1alpha1
+  - type: olm.package
+    value:
+      packageName: submariner
+      version: 0.18.2
+  - type: olm.csv.metadata
+    value:
+      annotations:
+        alm-examples: |-
+          [
+            {
+              "apiVersion": "submariner.io/v1alpha1",
+              "kind": "Broker",
+              "metadata": {
+                "name": "submariner-broker"
+              },
+              "spec": {
+                "components": [
+                  "service-discovery",
+                  "connectivity"
+                ],
+                "defaultGlobalnetClusterSize": 8192,
+                "globalnetEnabled": false
+              }
+            },
+            {
+              "apiVersion": "submariner.io/v1alpha1",
+              "kind": "ServiceDiscovery",
+              "metadata": {
+                "name": "servicediscovery"
+              },
+              "spec": {
+                "brokerK8sApiServer": "192.168.67.110:8443",
+                "brokerK8sApiServerToken": "$(BROKER_K8S_API_TOKEN)",
+                "brokerK8sCA": "$(BROKER_K8S_CA)",
+                "brokerK8sRemoteNamespace": "submariner-k8s-broker",
+                "clusterID": "cluster1",
+                "debug": false,
+                "globalnetEnabled": false,
+                "namespace": "submariner-operator",
+                "repository": "registry.redhat.io/rhacm2",
+                "version": "$(VERSION)"
+              }
+            },
+            {
+              "apiVersion": "submariner.io/v1alpha1",
+              "kind": "Submariner",
+              "metadata": {
+                "name": "submariner"
+              },
+              "spec": {
+                "broker": "k8s",
+                "brokerK8sApiServer": "192.168.67.110:8443",
+                "brokerK8sApiServerToken": "$(BROKER_K8S_API_TOKEN)",
+                "brokerK8sCA": "$(BROKER_K8S_CA)",
+                "brokerK8sRemoteNamespace": "submariner-k8s-broker",
+                "cableDriver": "libreswan",
+                "ceIPSecDebug": false,
+                "ceIPSecIKEPort": 500,
+                "ceIPSecNATTPort": 4500,
+                "ceIPSecPSK": "$(IPSEC_PSK)",
+                "clusterCIDR": "192.168.67.0/24",
+                "clusterID": "cluster1",
+                "connectionHealthCheck": {
+                  "enabled": false,
+                  "intervalSeconds": 1,
+                  "maxPacketLossCount": 5
+                },
+                "debug": false,
+                "globalCIDR": "",
+                "namespace": "submariner-operator",
+                "natEnabled": true,
+                "repository": "registry.redhat.io/rhacm2",
+                "serviceCIDR": "192.168.66.0/24",
+                "serviceDiscoveryEnabled": true,
+                "version": "v$(VERSION)"
+              }
+            }
+          ]
+        capabilities: Basic Install
+        categories: Networking
+        certified: "false"
+        containerImage: registry.redhat.io/rhacm2/submariner-rhel9-operator@sha256:d29febd4d3714e3748c572b93e669edd098f7f1405aca48f8885079a5a60c31f
+        createdAt: "2024-10-30 23:05:29"
+        description: Creates and manages Submariner deployments.
+        features.operators.openshift.io/cnf: "false"
+        features.operators.openshift.io/cni: "false"
+        features.operators.openshift.io/csi: "false"
+        features.operators.openshift.io/disconnected: "true"
+        features.operators.openshift.io/fips-compliant: "true"
+        features.operators.openshift.io/proxy-aware: "false"
+        features.operators.openshift.io/tls-profiles: "false"
+        features.operators.openshift.io/token-auth-aws: "false"
+        features.operators.openshift.io/token-auth-azure: "false"
+        features.operators.openshift.io/token-auth-gcp: "false"
+        olm.skipRange: '>=0.17.0 <0.18.2'
+        operatorframework.io/suggested-namespace: submariner-operator
+        operators.openshift.io/valid-subscription: '["OpenShift Platform Plus", "Red Hat Advanced Cluster Management for Kubernetes"]'
+        operators.operatorframework.io/builder: operator-sdk-v1.34.1
+        operators.operatorframework.io/project_layout: go.kubebuilder.io/v3
+        repository: https://github.com/submariner-io/submariner-operator
+        support: Red Hat
+      apiServiceDefinitions: {}
+      crdDescriptions:
+        owned:
+          - description: Broker is the Schema for the brokers API.
+            displayName: Submariner Broker
+            kind: Broker
+            name: brokers.submariner.io
+            resources:
+              - kind: Deployment
+                name: submariner-operator
+                version: v1
+            specDescriptors:
+              - description: List of the components to be installed - any of [service-discovery, connectivity].
+                displayName: Components
+                path: components
+                x-descriptors:
+                  - urn:alm:descriptor:com.tectonic.ui:text
+              - description: List of domains to use for multi-cluster service discovery.
+                displayName: Default Custom Domains
+                path: defaultCustomDomains
+                x-descriptors:
+                  - urn:alm:descriptor:com.tectonic.ui:text
+                  - urn:alm:descriptor:com.tectonic.ui:advanced
+              - description: Default cluster size for GlobalCIDR allocated to each cluster (amount of global IPs).
+                displayName: Default Globalnet Cluster Size
+                path: defaultGlobalnetClusterSize
+                x-descriptors:
+                  - urn:alm:descriptor:com.tectonic.ui:number
+                  - urn:alm:descriptor:com.tectonic.ui:fieldDependency:globalnetEnabled:true
+                  - urn:alm:descriptor:com.tectonic.ui:advanced
+              - description: GlobalCIDR supernet range for allocating GlobalCIDRs to each cluster.
+                displayName: Globalnet CIDR Range
+                path: globalnetCIDRRange
+                x-descriptors:
+                  - urn:alm:descriptor:com.tectonic.ui:text
+                  - urn:alm:descriptor:com.tectonic.ui:fieldDependency:globalnetEnabled:true
+                  - urn:alm:descriptor:com.tectonic.ui:advanced
+              - description: Enable support for Overlapping CIDRs in connecting clusters.
+                displayName: Enable Globalnet
+                path: globalnetEnabled
+                x-descriptors:
+                  - urn:alm:descriptor:com.tectonic.ui:booleanSwitch
+            version: v1alpha1
+          - description: ServiceDiscovery is the Schema for the servicediscoveries API.
+            displayName: Service Discovery
+            kind: ServiceDiscovery
+            name: servicediscoveries.submariner.io
+            specDescriptors:
+              - description: Name of the custom CoreDNS configmap.
+                displayName: CoreDNS Custom Config Name
+                path: coreDNSCustomConfig.configMapName
+                x-descriptors:
+                  - urn:alm:descriptor:com.tectonic.ui:text
+              - description: Namespace of the custom CoreDNS configmap.
+                displayName: CoreDNS Custom Config Namespace
+                path: coreDNSCustomConfig.namespace
+                x-descriptors:
+                  - urn:alm:descriptor:com.tectonic.ui:text
+            version: v1alpha1
+          - description: Submariner is the Schema for the submariners API.
+            displayName: Submariner
+            kind: Submariner
+            name: submariners.submariner.io
+            resources:
+              - kind: Deployment
+                name: submariner-operator
+                version: v1
+            specDescriptors:
+              - description: Type of broker (must be "k8s").
+                displayName: Broker
+                path: broker
+                x-descriptors:
+                  - urn:alm:descriptor:com.tectonic.ui:hidden
+              - description: The broker API URL.
+                displayName: Broker API Server
+                path: brokerK8sApiServer
+                x-descriptors:
+                  - urn:alm:descriptor:com.tectonic.ui:text
+              - description: The broker API Token.
+                displayName: Broker API Token
+                path: brokerK8sApiServerToken
+                x-descriptors:
+                  - urn:alm:descriptor:com.tectonic.ui:password
+              - description: The broker certificate authority.
+                displayName: Broker API CA
+                path: brokerK8sCA
+                x-descriptors:
+                  - urn:alm:descriptor:com.tectonic.ui:password
+              - description: The Broker namespace.
+                displayName: Broker Remote Namespace
+                path: brokerK8sRemoteNamespace
+                x-descriptors:
+                  - urn:alm:descriptor:com.tectonic.ui:text
+              - description: Cable driver implementation - any of [libreswan, wireguard, vxlan].
+                displayName: Cable Driver
+                path: cableDriver
+                x-descriptors:
+                  - urn:alm:descriptor:com.tectonic.ui:select:libreswan
+                  - urn:alm:descriptor:com.tectonic.ui:select:vxlan
+                  - urn:alm:descriptor:com.tectonic.ui:select:wireguard
+              - description: Enable logging IPsec debugging information.
+                displayName: IPsec Debug
+                path: ceIPSecDebug
+                x-descriptors:
+                  - urn:alm:descriptor:com.tectonic.ui:booleanSwitch
+                  - urn:alm:descriptor:com.tectonic.ui:advanced
+              - description: Force UDP encapsulation for IPsec.
+                displayName: IPsec Force UDP Encapsulation
+                path: ceIPSecForceUDPEncaps
+                x-descriptors:
+                  - urn:alm:descriptor:com.tectonic.ui:booleanSwitch
+                  - urn:alm:descriptor:com.tectonic.ui:advanced
+              - description: The IPsec IKE port (500 usually).
+                displayName: IPsec IKE Port
+                path: ceIPSecIKEPort
+                x-descriptors:
+                  - urn:alm:descriptor:com.tectonic.ui:number
+              - description: The IPsec NAT traversal port (4500 usually).
+                displayName: IPsec NATT Port
+                path: ceIPSecNATTPort
+                x-descriptors:
+                  - urn:alm:descriptor:com.tectonic.ui:number
+                  - urn:alm:descriptor:com.tectonic.ui:fieldDependency:natEnabled:true
+              - description: The IPsec Pre-Shared Key which must be identical in all route agents across the cluster.
+                displayName: IPsec Pre-Shared Key
+                path: ceIPSecPSK
+                x-descriptors:
+                  - urn:alm:descriptor:com.tectonic.ui:password
+              - description: Enable this cluster as a preferred server for data-plane connections.
+                displayName: IPsec Preferred Server
+                path: ceIPSecPreferredServer
+                x-descriptors:
+                  - urn:alm:descriptor:com.tectonic.ui:booleanSwitch
+                  - urn:alm:descriptor:com.tectonic.ui:advanced
+              - description: The cluster CIDR.
+                displayName: Cluster CIDR
+                path: clusterCIDR
+                x-descriptors:
+                  - urn:alm:descriptor:com.tectonic.ui:text
+              - description: The cluster ID used to identify the tunnels.
+                displayName: Cluster ID
+                path: clusterID
+                x-descriptors:
+                  - urn:alm:descriptor:com.tectonic.ui:text
+              - description: The gateway connection health check.
+                displayName: Connection Health Check
+                path: connectionHealthCheck
+                x-descriptors:
+                  - urn:alm:descriptor:com.tectonic.ui:advanced
+              - description: Enable the connection health check.
+                displayName: Enable Connection Health Checks
+                path: connectionHealthCheck.enabled
+                x-descriptors:
+                  - urn:alm:descriptor:com.tectonic.ui:booleanSwitch
+              - description: The interval at which health check pings are sent.
+                displayName: Connection Health Check Interval
+                path: connectionHealthCheck.intervalSeconds
+                x-descriptors:
+                  - urn:alm:descriptor:com.tectonic.ui:number
+                  - urn:alm:descriptor:com.tectonic.ui:fieldDependency:connectionHealthCheck.enabled:true
+              - description: The maximum number of packets lost at which the health checker will mark the connection as down.
+                displayName: Maximum Packet Loss
+                path: connectionHealthCheck.maxPacketLossCount
+                x-descriptors:
+                  - urn:alm:descriptor:com.tectonic.ui:number
+                  - urn:alm:descriptor:com.tectonic.ui:fieldDependency:connectionHealthCheck.enabled:true
+              - description: Name of the custom CoreDNS configmap to configure forwarding to Lighthouse. It should be in <namespace>/<name> format where <namespace> is optional and defaults to kube-system.
+                displayName: CoreDNS Custom Config
+                path: coreDNSCustomConfig
+                x-descriptors:
+                  - urn:alm:descriptor:com.tectonic.ui:advanced
+              - description: Name of the custom CoreDNS configmap.
+                displayName: CoreDNS Custom Config Name
+                path: coreDNSCustomConfig.configMapName
+                x-descriptors:
+                  - urn:alm:descriptor:com.tectonic.ui:text
+              - description: Namespace of the custom CoreDNS configmap.
+                displayName: CoreDNS Custom Config Namespace
+                path: coreDNSCustomConfig.namespace
+                x-descriptors:
+                  - urn:alm:descriptor:com.tectonic.ui:text
+              - description: List of domains to use for multi-cluster service discovery.
+                displayName: Custom Domains
+                path: customDomains
+                x-descriptors:
+                  - urn:alm:descriptor:com.tectonic.ui:advanced
+              - description: Enable operator debugging.
+                displayName: Debug
+                path: debug
+                x-descriptors:
+                  - urn:alm:descriptor:com.tectonic.ui:booleanSwitch
+                  - urn:alm:descriptor:com.tectonic.ui:advanced
+              - description: The Global CIDR super-net range for allocating GlobalCIDRs to each cluster.
+                displayName: Global CIDR
+                path: globalCIDR
+                x-descriptors:
+                  - urn:alm:descriptor:com.tectonic.ui:text
+                  - urn:alm:descriptor:com.tectonic.ui:advanced
+              - description: Halt on certificate error (so the pod gets restarted).
+                displayName: Halt (and restart) on certificate error
+                path: haltOnCertificateError
+                x-descriptors:
+                  - urn:alm:descriptor:com.tectonic.ui:booleanSwitch
+              - description: Override component images.
+                displayName: Image Overrides
+                path: imageOverrides
+                x-descriptors:
+                  - urn:alm:descriptor:com.tectonic.ui:hidden
+                  - urn:alm:descriptor:com.tectonic.ui:advanced
+              - description: Enable automatic Load Balancer in front of the gateways.
+                displayName: Enable Load Balancer
+                path: loadBalancerEnabled
+                x-descriptors:
+                  - urn:alm:descriptor:com.tectonic.ui:booleanSwitch
+              - description: The namespace in which to deploy the submariner operator.
+                displayName: Namespace
+                path: namespace
+                x-descriptors:
+                  - urn:alm:descriptor:com.tectonic.ui:text
+              - description: Enable NAT between clusters.
+                displayName: Enable NAT
+                path: natEnabled
+                x-descriptors:
+                  - urn:alm:descriptor:com.tectonic.ui:booleanSwitch
+              - description: The image repository.
+                displayName: Repository
+                path: repository
+                x-descriptors:
+                  - urn:alm:descriptor:com.tectonic.ui:text
+                  - urn:alm:descriptor:com.tectonic.ui:advanced
+              - description: The service CIDR.
+                displayName: Service CIDR
+                path: serviceCIDR
+                x-descriptors:
+                  - urn:alm:descriptor:com.tectonic.ui:text
+              - description: Enable support for Service Discovery (Lighthouse).
+                displayName: Enable Service Discovery
+                path: serviceDiscoveryEnabled
+                x-descriptors:
+                  - urn:alm:descriptor:com.tectonic.ui:booleanSwitch
+              - description: The image tag.
+                displayName: Version
+                path: version
+                x-descriptors:
+                  - urn:alm:descriptor:com.tectonic.ui:text
+                  - urn:alm:descriptor:com.tectonic.ui:advanced
+            statusDescriptors:
+              - description: The current cluster CIDR.
+                displayName: Cluster CIDR
+                path: clusterCIDR
+                x-descriptors:
+                  - urn:alm:descriptor:com.tectonic.ui:text
+              - description: The current cluster ID.
+                displayName: Cluster ID
+                path: clusterID
+                x-descriptors:
+                  - urn:alm:descriptor:com.tectonic.ui:text
+              - description: Information about the deployment.
+                displayName: Deployment Information
+                path: deploymentInfo
+              - description: The status of the gateway DaemonSet.
+                displayName: Gateway DaemonSet Status
+                path: gatewayDaemonSetStatus
+              - description: Status of the gateways in the cluster.
+                displayName: Gateways
+                path: gateways
+              - description: The current global CIDR.
+                displayName: Global CIDR
+                path: globalCIDR
+                x-descriptors:
+                  - urn:alm:descriptor:com.tectonic.ui:text
+              - description: The status of the Globalnet DaemonSet.
+                displayName: Globalnet DaemonSet Status
+                path: globalnetDaemonSetStatus
+              - description: The status of the load balancer DaemonSet.
+                displayName: Load Balancer DaemonSet Status
+                path: loadBalancerStatus
+              - description: The current NAT status.
+                displayName: NAT Enabled
+                path: natEnabled
+                x-descriptors:
+                  - urn:alm:descriptor:com.tectonic.ui:text
+              - description: The current network plugin.
+                displayName: Network Plugin
+                path: networkPlugin
+                x-descriptors:
+                  - urn:alm:descriptor:com.tectonic.ui:text
+              - description: The status of the route agent DaemonSet.
+                displayName: Route Agent DaemonSet Status
+                path: routeAgentDaemonSetStatus
+              - description: The current service CIDR.
+                displayName: Service CIDR
+                path: serviceCIDR
+                x-descriptors:
+                  - urn:alm:descriptor:com.tectonic.ui:text
+              - description: The image version in use by the various Submariner DaemonSets and Deployments.
+                displayName: Version
+                path: version
+            version: v1alpha1
+      description: |-
+        [Submariner](https://submariner.io) enables direct networking between Pods and Services in different Kubernetes
+        clusters. With Submariner, your applications and services can span multiple cloud providers, data centers, and regions.
+
+        Submariner is designed to be cloud provider and network plugin (CNI) agnostic.
+
+        Submariner consists of several main components that work in conjunction to securely connect workloads across
+        multiple Kubernetes clusters, both on-premise and on public clouds:
+        * [Gateway Engine](https://submariner.io/getting-started/architecture/gateway-engine/): manages the secure tunnels to other clusters.
+        * [Route Agent](https://submariner.io/getting-started/architecture/route-agent/): routes cross-cluster traffic from nodes
+        to the active Gateway Engine.
+        * [Broker](https://submariner.io/getting-started/architecture/broker/): facilitates the exchange of metadata between Gateway
+        Engines enabling them to discover one another.
+
+        Submariner has optional components that provide additional functionality:
+        * [Globalnet Controller](https://submariner.io/getting-started/architecture/globalnet/): handles overlapping CIDRs across clusters.
+        * [Service Discovery](https://submariner.io/getting-started/architecture/service-discovery/): provides DNS discovery of services
+        across clusters.
+
+        ### Prerequisites
+        Submariner has a few requirements to get started, all are documented [here](https://submariner.io/getting-started/quickstart/kind/#prerequisites).
+
+        If running on an OpenShift cluster, perform the following steps to bind the Submariner service accounts to the **privileged** SCC.
+
+        ```shell
+        oc adm policy add-scc-to-user privileged system:serviceaccount:submariner-operator:submariner-gateway
+        oc adm policy add-scc-to-user privileged system:serviceaccount:submariner-operator:submariner-routeagent
+        oc adm policy add-scc-to-user privileged system:serviceaccount:submariner-operator:submariner-globalnet
+        oc adm policy add-scc-to-user privileged system:serviceaccount:submariner-operator:submariner-lighthouse-coredns
+        ```
+
+        ### Deployment
+        Submariner provides an [Operator](https://github.com/submariner-io/submariner-operator) for easy API-based
+        installation and management.
+        A command line utility, [subctl](https://github.com/submariner-io/submariner-operator/releases), wraps the
+        Operator to aid users with manual deployments and easy experimentation.
+        subctl greatly simplifies the deployment of Submariner, and is therefore the recommended deployment method.
+        For complete information about subctl, please refer to [this page](https://submariner.io/operations/deployment/subctl).
+        In addition to Operator and subctl, Submariner also provides [Helm Charts](https://submariner.io/operations/deployment/helm).
+
+        On the broker cluster:
+        1. Create the broker namespace called `submariner-k8s-broker`.
+        2. Apply the broker RBAC definitions:
+
+            ```shell
+            git clone --depth 1 --single-branch --branch release-0.18 https://github.com/submariner-io/submariner-operator
+            kubectl apply -k submariner-operator/config/broker -n submariner-k8s-broker
+            ```
+
+        3. Install the Submariner Operator from the catalog.
+        4. Create a new `Broker` custom resource named **submariner-broker**.
+
+        On connected clusters:
+        1. Install the Submariner Operator from the catalog.
+        2. Create a new `Submariner` custom resource named **submariner**.
+
+        The following values can be specified for the **Broker** CR:
+        * **defaultCustomDomains**: List of domains to use for multicluster service discovery.
+        * **defaultGlobalnetClusterSize**: Default cluster size for GlobalCIDR allocated to each cluster (amount of global IPs).
+        * **globalnetEnabled**: Enable support for Overlapping CIDRs in connecting clusters (default disabled).
+        * **globalnetCIDRRange**: GlobalCIDR supernet range for allocating GlobalCIDRs to each cluster.
+        * **components**: List of components to be installed [service-discovery, connectivity].
+
+        The following values can be specified for the **Submariner** CR:
+        * **namespace**: The namespace to install in.
+        * **serviceCIDR**: The service CIDR.
+        * **clusterCIDR**: The cluster CIDR.
+        * **clusterID**: The cluster ID used to identify the tunnels.
+        * **colorCodes**: The color code(s) for the cluster.
+        * **debug**: *'true'* to enable operator debugging information - verbose logging.
+        * **natEnabled**: *'true'* if there is NAT between clusters. Typically *'true'* in public cloud or mixed on-prem/public cloud environments and *'false'* when all clusters are on-prem.
+        * **broker**: This must be *k8s* currently.
+        * **brokerK8sApiServer**: The broker API server URL.
+            To retrieve it run the following command on the broker cluster:
+
+            `kubectl -n default get endpoints kubernetes -o
+            jsonpath="{.subsets[0].addresses[0].ip}:{.subsets[0].ports[?(@.name=='https')].port}"`
+
+        * **brokerK8sApiServerToken**: The broker API server token.
+            To retrieve the token run the following command on the broker cluster, assuming the broker is running in the
+            *submariner-k8s-broker* namespace:
+
+            `kubectl -n submariner-k8s-broker get secrets -o json
+            | jq -r -c '[.items[] | select(.metadata.annotations."kubernetes.io/service-account.name"=="submariner-k8s-broker-client")
+            | select(.data.token != null)] | .[0].data.token' | base64 --decode`
+
+        * **brokerK8sRemoteNamespace**: The broker namespace.
+        * **brokerK8sCA**: The broker certificate authority.
+            To retrieve the broker CA run the following command on the broker cluster, assuming the broker is running in
+            the *submariner-k8s-broker* namespace:
+
+            `kubectl -n submariner-k8s-broker get secrets -o json
+            | jq -r -c '[.items[] | select(.metadata.annotations."kubernetes.io/service-account.name"=="submariner-k8s-broker-client")
+            | select(.data."ca.crt" != null)] | .[0].data."ca.crt"' | base64 --decode`
+
+        * **ceIPSecPSK**: The IPsec Pre-Shared Key which must be identical in all route agents across the cluster.
+            To generate a unique PSK run the following command on your machine:
+
+            `dd if=/dev/urandom count=64 bs=8 | LC_CTYPE=C tr -dc 'a-zA-Z0-9' | fold -w 64 | head -n 1`
+
+        * **ceIPSecDebug**: *'true'* to enable logging IPsec debugging information - verbose logging from the IPsec daemon.
+        * **ceIPSecIKEPort**: The IPsec IKE port (500 usually).
+        * **ceIPSecNATTPort**: The IPsec NAT traversal port (4500 usually).
+        * **repository**: The container repository to use.
+        * **version**: The container version to use.
+        * **imageOverrides**: A string map that overrides the images by defining a path for each component.
+                              This field is meant to be used by CI, development or testing.
+
+          **example:**
+
+          ```yaml
+          imageOverrides:
+            submariner-route-agent=my_repo/my_custom_image:my_tag
+            submariner-globalnet=my_repo/my_custom_image:my_tag
+          ```
+
+        ## Support & Troubleshooting
+
+        Full product support, including Support Cases, Product Pages and Knowledgebase, comes through a
+        [Red Hat Advanced Cluster Management](https://www.redhat.com/en/technologies/management/advanced-cluster-management) subscription.
+      displayName: Submariner
+      installModes:
+        - supported: true
+          type: OwnNamespace
+        - supported: false
+          type: SingleNamespace
+        - supported: false
+          type: MultiNamespace
+        - supported: false
+          type: AllNamespaces
+      keywords:
+        - multi-cluster
+        - ipsec
+        - tunnel
+        - submariner-operator
+      labels:
+        operatorframework.io/arch.amd64: supported
+        operatorframework.io/arch.arm64: supported
+        operatorframework.io/arch.ppc64le: supported
+        operatorframework.io/arch.s390x: supported
+        operatorframework.io/os.linux: supported
+      links:
+        - name: Website
+          url: https://submariner.io
+        - name: GitHub
+          url: https://github.com/submariner-io
+        - name: Slack
+          url: https://kubernetes.slack.com/archives/C010RJV694M
+        - name: YouTube
+          url: https://www.youtube.com/channel/UCZ3brSgl2v4boglZoeChClQ/videos
+        - name: Twitter
+          url: https://twitter.com/submarinerio
+      maintainers:
+        - email: submariner-dev@googlegroups.com
+          name: Submariner project
+      maturity: alpha
+      minKubeVersion: 1.22.0
+      provider:
+        name: Red Hat
+relatedImages:
+  - image: registry.redhat.io/rhacm2/lighthouse-agent-rhel9@sha256:88af902009ab261f2434edf4a413b54780e351fd22909d946b0d613b0d20dc98
+    name: submariner-lighthouse-agent
+  - image: registry.redhat.io/rhacm2/lighthouse-coredns-rhel9@sha256:e0099ec865dacaa93573c442588185e861e090061f12f92d8c409adc7047eed7
+    name: submariner-lighthouse-coredns
+  - image: registry.redhat.io/rhacm2/nettest-rhel9@sha256:9b5be03d1ad8a44edb85e4585f1898c81b3c8970c2c46ff0616e7c8744cb88cd
+    name: submariner-metrics-proxy
+  - image: registry.redhat.io/rhacm2/nettest-rhel9@sha256:9b5be03d1ad8a44edb85e4585f1898c81b3c8970c2c46ff0616e7c8744cb88cd
+    name: submariner-nettest
+  - image: registry.redhat.io/rhacm2/submariner-gateway-rhel9@sha256:dd898b1f96eafdb01de446a6b2f8c6f2daabf38ab367af1edc58031670d90335
+    name: submariner-gateway
+  - image: registry.redhat.io/rhacm2/submariner-globalnet-rhel9@sha256:c6dfa7518806b949e706c5eab435e7743ad6c9017e1b14397e2eff07efdf7c64
+    name: submariner-globalnet
+  - image: registry.redhat.io/rhacm2/submariner-operator-bundle@sha256:002a7a163853bd12b8403c163c9a3c9b157a50e3d2622f3beb578d3bbd144c76
+    name: ""
+  - image: registry.redhat.io/rhacm2/submariner-rhel9-operator@sha256:d29febd4d3714e3748c572b93e669edd098f7f1405aca48f8885079a5a60c31f
+    name: submariner-rhel9-operator-d29febd4d3714e3748c572b93e669edd098f7f1405aca48f8885079a5a60c31f-annotation
+  - image: registry.redhat.io/rhacm2/submariner-rhel9-operator@sha256:d29febd4d3714e3748c572b93e669edd098f7f1405aca48f8885079a5a60c31f
+    name: submariner-operator
+  - image: registry.redhat.io/rhacm2/submariner-route-agent-rhel9@sha256:91603ab916087773636234597da2deb5962722205978fadb4f4ef30bac3d54af
+    name: submariner-routeagent
+schema: olm.bundle
