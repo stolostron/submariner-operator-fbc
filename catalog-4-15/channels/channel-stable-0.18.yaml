@@ -1,0 +1,7 @@
+---
+entries:
+  - name: submariner.v0.18.5
+    skipRange: '>=0.16.0 <0.18.5'
+name: stable-0.18
+package: submariner
+schema: olm.channel
