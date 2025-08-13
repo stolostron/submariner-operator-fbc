@@ -83,8 +83,6 @@ entries:
     name: stable-0.21
     package: submariner
     schema: olm.channel
-  - image: quay.io/redhat-user-workloads/submariner-tenant/submariner-bundle-0-21@sha256:3f5cb73cb2f55f3641eb35388275076cdf16305d0ca83ff0060240bab11ba692
-    schema: olm.bundle
   - name: submariner.v0.17.0
     image: registry.redhat.io/rhacm2/submariner-operator-bundle@sha256:c232c328c978c79de92ef87ef7f70026f3aba722edffbc039f59e2df31ab9297
     schema: olm.bundle
@@ -138,5 +136,8 @@ entries:
     schema: olm.bundle
   - name: submariner.v0.20.1
     image: registry.redhat.io/rhacm2/submariner-operator-bundle@sha256:90505e5ffaee7af330306c4e045d3755e0c74d30b9f45e1e7739c205d945872d
+    schema: olm.bundle
+  - name: submariner.v0.21.0
+    image: quay.io/redhat-user-workloads/submariner-tenant/submariner-bundle-0-21@sha256:3f5cb73cb2f55f3641eb35388275076cdf16305d0ca83ff0060240bab11ba692
     schema: olm.bundle
 schema: olm.template.basic
