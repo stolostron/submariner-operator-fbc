@@ -1,5 +1,8 @@
 ---
 entries:
+  - name: submariner.v0.21.1
+    replaces: submariner.v0.21.0
+    skipRange: '>=0.20.0 <0.21.1'
   - name: submariner.v0.21.0
     skipRange: '>=0.20.0 <0.21.0'
 name: stable-0.21
