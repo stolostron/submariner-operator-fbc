@@ -8,45 +8,36 @@ spec:
     - mirrorSourcePolicy: AllowContactingSource
       mirrors:
         - quay.io/redhat-user-workloads/submariner-tenant/lighthouse-agent-0-21
-        - quay.io/redhat-user-workloads/submariner-tenant/lighthouse-agent-0-20
       source: registry.redhat.io/rhacm2/lighthouse-agent-rhel9
     - mirrorSourcePolicy: AllowContactingSource
       mirrors:
         - quay.io/redhat-user-workloads/submariner-tenant/lighthouse-coredns-0-21
-        - quay.io/redhat-user-workloads/submariner-tenant/lighthouse-coredns-0-20
       source: registry.redhat.io/rhacm2/lighthouse-coredns-rhel9
     - mirrorSourcePolicy: AllowContactingSource
       mirrors:
         - quay.io/redhat-user-workloads/submariner-tenant/nettest-0-21
-        - quay.io/redhat-user-workloads/submariner-tenant/nettest-0-20
       source: registry.redhat.io/rhacm2/nettest-rhel9
     - mirrorSourcePolicy: AllowContactingSource
       mirrors:
         - quay.io/redhat-user-workloads/submariner-tenant/subctl-0-21
-        - quay.io/redhat-user-workloads/submariner-tenant/subctl-0-20
       source: registry.redhat.io/rhacm2/subctl-rhel9
     - mirrorSourcePolicy: AllowContactingSource
       mirrors:
         - quay.io/redhat-user-workloads/submariner-tenant/submariner-bundle-0-21
-        - quay.io/redhat-user-workloads/submariner-tenant/submariner-bundle-0-20
       source: registry.redhat.io/rhacm2/submariner-operator-bundle
     - mirrorSourcePolicy: AllowContactingSource
       mirrors:
         - quay.io/redhat-user-workloads/submariner-tenant/submariner-gateway-0-21
-        - quay.io/redhat-user-workloads/submariner-tenant/submariner-gateway-0-20
       source: registry.redhat.io/rhacm2/submariner-gateway-rhel9
     - mirrorSourcePolicy: AllowContactingSource
       mirrors:
         - quay.io/redhat-user-workloads/submariner-tenant/submariner-globalnet-0-21
-        - quay.io/redhat-user-workloads/submariner-tenant/submariner-globalnet-0-20
       source: registry.redhat.io/rhacm2/submariner-globalnet-rhel9
     - mirrorSourcePolicy: AllowContactingSource
       mirrors:
         - quay.io/redhat-user-workloads/submariner-tenant/submariner-operator-0-21
-        - quay.io/redhat-user-workloads/submariner-tenant/submariner-operator-0-20
       source: registry.redhat.io/rhacm2/submariner-rhel9-operator
     - mirrorSourcePolicy: AllowContactingSource
       mirrors:
         - quay.io/redhat-user-workloads/submariner-tenant/submariner-route-agent-0-21
-        - quay.io/redhat-user-workloads/submariner-tenant/submariner-route-agent-0-20
       source: registry.redhat.io/rhacm2/submariner-route-agent-rhel9
