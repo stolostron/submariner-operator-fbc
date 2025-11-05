@@ -15,8 +15,8 @@ PACKAGE_NAME="submariner"
 rm -rf "${OUTPUT_DIR}"
 mkdir -p "${OUTPUT_DIR}"
 
-# Loop through OCP versions from 4.16 to 4.19
-for i in {16..19}; do
+# Loop through OCP versions from 4.16 to 4.20
+for i in {16..20}; do
   ocp_version="4.${i}"
   echo "--> Fetching and extracting catalog for OCP ${ocp_version}..."
 
