@@ -29,6 +29,10 @@ spec:
     - linux/x86_64
   - name: dockerfile
     value: catalog.Dockerfile
+  - name: build-args
+    value:
+    - INPUT_DIR=catalog-4-20
+    - OPM_IMAGE=registry.redhat.io/openshift4/ose-operator-registry-rhel9:v4.20
   pipelineSpec:
     description: |
       This pipeline is ideal for building and verifying [file-based catalogs](https://konflux-ci.dev/docs/end-to-end/building-olm/#building-the-file-based-catalog).
