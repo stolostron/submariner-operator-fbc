@@ -4,13 +4,14 @@
 
 ## Prerequisites
 
-- Stage or prod release completed and merged
 - Cluster access: `oc login --web https://api.kflux-prd-rh02.0fk9.p1.openshiftapps.com:6443/`
+- Disconnect from RH VPN (blocks registry.redhat.io access)
 
 ## 1. Get Bundle Image
 
 ```bash
-# Replace: 0.X → 0.21, 0-X-Y → 0-21-2, 0-X → 0-21; choose stage or prod
+# For version 0.21.2, replace: 0.X → 0.21, 0-X-Y → 0-21-2, 0-X → 0-21
+# Change /stage/ to /prod/ if updating from prod release
 REPO=https://raw.githubusercontent.com/dfarrell07/submariner-release-management
 SNAPSHOT=$(curl -s \
   $REPO/refs/heads/main/releases/0.X/stage/submariner-0-X-Y-*.yaml \
@@ -19,14 +20,11 @@ oc get snapshot $SNAPSHOT -n submariner-tenant \
   -o jsonpath='{.spec.components[?(@.name=="submariner-bundle-0-X")].containerImage}'
 ```
 
-- Stage: `quay.io/redhat-user-workloads/.../submariner-bundle-0-X@sha256:...`
-- Prod: `registry.redhat.io/rhacm2/submariner-operator-bundle@sha256:...`
-
 ## 2. Edit catalog-template.yaml
 
-### Scenario A: New patch (add 0.21.2 after 0.21.1)
+### Scenario A: Add new version
 
-Add channel entry at top of `stable-0.X` entries:
+Add as first entry in `stable-0.X` channel:
 
 ```yaml
       - name: submariner.v0.X.Y
@@ -34,7 +32,7 @@ Add channel entry at top of `stable-0.X` entries:
         skipRange: '>=0.X.0 <0.X.Y'
 ```
 
-Add bundle at end of bundles section:
+Add as last entry before `schema: olm.template.basic`:
 
 ```yaml
   - name: submariner.v0.X.Y
@@ -42,7 +40,7 @@ Add bundle at end of bundles section:
     schema: olm.bundle
 ```
 
-### Scenario B: Update SHA (prod or re-release)
+### Scenario B: Update SHA
 
 Update `image` in existing bundle:
 
@@ -50,35 +48,59 @@ Update `image` in existing bundle:
     image: <bundle-image-from-step-1>
 ```
 
-### Scenario C: Replace version (rare, skip bad upstream release)
+### Scenario C: Replace version
 
-Skip problematic version, replace with next.
+Skip problematic version by releasing next version in its place.
 
-Update channel and bundle:
+Update channel entry `name` and `skipRange`:
 
-- Channel: `name` (v0.21.1 → v0.21.2), `skipRange` (<0.21.1 → <0.21.2)
-- Bundle: `name` (v0.21.1 → v0.21.2), `image`
+```yaml
+      - name: submariner.v0.21.2        # was v0.21.1
+        replaces: submariner.v0.21.0
+        skipRange: '>=0.21.0 <0.21.2'   # was <0.21.1
+```
 
-Build renames bundle files automatically.
+Update bundle `name` and `image`:
+
+```yaml
+  - name: submariner.v0.21.2            # was v0.21.1
+    image: <bundle-image-from-step-1>
+    schema: olm.bundle
+```
+
+**Note:** Build automatically renames catalog files to match new version.
 
 ## 3. Build, Validate, Commit
+
+Build and validate catalogs (~2-5 min):
 
 ```bash
 cd ~/konflux/submariner-operator-fbc
 make build-catalogs validate-catalogs
+```
+
+Verify expected file changes (`git status --short`):
+
+- Scenario A: 14 files (7 bundles + 7 channels)
+- Scenario B: 7 files (7 bundles)
+- Scenario C: variable
+
+Commit changes:
+
+```bash
 git add catalog-template.yaml catalog-4-*/
 git commit -s -m "Update catalog with bundle v0.X.Y"
 git push origin main
 ```
 
-Build updates relatedImages component SHAs from bundle.
-
 ## 4. Verify Snapshots
 
-Wait for Konflux (~15-30 min), then verify all OCP versions:
+Wait for Konflux (~15-30 min after push).
+
+Verify all OCP versions show `TestPassed`:
 
 ```bash
-for VERSION in 16 17 18 19 20; do
+for VERSION in 14 15 16 17 18 19 20; do
   SNAPSHOT=$(oc get snapshots -n submariner-tenant \
     --sort-by=.metadata.creationTimestamp \
     | grep "^submariner-fbc-4-$VERSION" | tail -1 | awk '{print $1}')
@@ -89,10 +111,4 @@ for VERSION in 16 17 18 19 20; do
 done
 ```
 
-All tests must show `TestPassed`. Record snapshot names for FBC release.
-
-## Done When
-
-- Catalogs built, validated, and pushed
-- All 5 snapshots (4-16 through 4-20) show TestPassed
-- Snapshot names recorded for FBC release step
+Record snapshot names for FBC release.
