@@ -140,3 +140,11 @@ done
 ```
 
 All scenarios should show `TestPassed`. Record snapshot names from output above for FBC release.
+
+## Follow-up: Update to Production Bundle URL
+
+After a prod release completes, update catalog-template.yaml from temporary quay.io URLs to permanent registry.redhat.io URLs. This must be done before quay.io URLs expire to prevent build failures. See:
+
+- [Update Catalog Template to Production Bundle URL](update-prod-url.md)
+
+Not time-critical immediately after release, but required eventually.
