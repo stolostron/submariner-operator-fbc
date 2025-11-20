@@ -37,6 +37,7 @@ git restore catalog-template.yaml \
     catalog-4-16 \
     catalog-4-17 \
     catalog-4-18 \
-    catalog-4-19
+    catalog-4-19 \
+    catalog-4-20
 
 echo "  - Reset complete."
