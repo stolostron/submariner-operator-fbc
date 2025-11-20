@@ -129,3 +129,8 @@ test-script: test-scripts
 .PHONY: add-bundle
 add-bundle:
 	./build/add-bundle.sh $(BUNDLE_IMAGE) $(REPLACES) $(SKIP_RANGE)
+
+.PHONY: validate-markdown md
+validate-markdown:
+	npx markdownlint-cli2 ".agents/workflows/*.md" "*.md"
+md: validate-markdown
