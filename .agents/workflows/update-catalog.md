@@ -7,7 +7,7 @@
 - Cluster access: `oc login --web https://api.kflux-prd-rh02.0fk9.p1.openshiftapps.com:6443/`
 - Disconnect from RH VPN (blocks registry.redhat.io access)
 
-## 1. Get Bundle Image
+## 1. Get Bundle Image and Snapshot
 
 ```bash
 # For version 0.21.2, replace: 0.X → 0.21, 0-X-Y → 0-21-2, 0-X → 0-21
@@ -16,9 +16,12 @@ REPO=https://raw.githubusercontent.com/dfarrell07/submariner-release-management
 SNAPSHOT=$(curl -s \
   $REPO/refs/heads/main/releases/0.X/stage/submariner-0-X-Y-*.yaml \
   | grep "snapshot:" | head -1 | awk '{print $2}')
+echo "Snapshot: $SNAPSHOT"
 oc get snapshot $SNAPSHOT -n submariner-tenant \
   -o jsonpath='{.spec.components[?(@.name=="submariner-bundle-0-X")].containerImage}'
 ```
+
+Copy snapshot name above for commit message in Step 3.
 
 ## 2. Edit catalog-template.yaml
 
@@ -70,7 +73,7 @@ Update bundle `name` and `image`:
 
 **Note:** Build automatically renames catalog files to match new version.
 
-## 3. Build, Validate, Commit
+## 3. Build, Validate, Create PR
 
 Build and validate catalogs (~2-5 min):
 
@@ -81,26 +84,51 @@ make build-catalogs validate-catalogs
 
 Verify expected file changes (`git status --short`):
 
-- Scenario A: 14 files (7 bundles + 7 channels)
-- Scenario B: 7 files (7 bundles)
+- Scenario A: 15 files (7 bundles + 7 channels + template)
+- Scenario B: 8 files (7 bundles + template)
 - Scenario C: variable
 
-Commit changes:
+Create branch and commit:
 
 ```bash
+# Branch: X.Y-stage or X.Y-prod (example: 21.2-stage)
+git checkout -b X.Y-stage
 git add catalog-template.yaml catalog-4-*/
-git commit -s -m "Update catalog with bundle v0.X.Y"
-git push origin main
+git commit -s -m "Update catalog with bundle v0.X.Y stage" -m "Snapshot: submariner-0-X-xxxxx"
+git push origin X.Y-stage
 ```
 
-## 4. Verify Snapshots
-
-Wait for Konflux (~15-30 min after push).
-
-Verify all OCP versions show `TestPassed`:
+Create pull request:
 
 ```bash
-for VERSION in 14 15 16 17 18 19 20; do
+gh pr create --title "Update catalog with bundle v0.X.Y stage" \
+  --body "Snapshot: submariner-0-X-xxxxx"
+```
+
+## 4. Verify CI and Merge
+
+Wait for CI checks to complete (~5-15 min), then verify:
+
+```bash
+gh pr checks
+```
+
+CI tests FBC builds for OCP versions 4-16 through 4-20 with multiple scenarios (operator, standard). All checks must pass.
+
+Merge when passing:
+
+```bash
+gh pr merge --squash
+```
+
+## 5. Verify Konflux Snapshots
+
+Wait for Konflux builds (~15-30 min after merge).
+
+Verify OCP versions show `TestPassed`:
+
+```bash
+for VERSION in 16 17 18 19 20; do
   SNAPSHOT=$(oc get snapshots -n submariner-tenant \
     --sort-by=.metadata.creationTimestamp \
     | grep "^submariner-fbc-4-$VERSION" | tail -1 | awk '{print $1}')
@@ -111,4 +139,4 @@ for VERSION in 14 15 16 17 18 19 20; do
 done
 ```
 
-Record snapshot names for FBC release.
+All scenarios should show `TestPassed`. Record snapshot names from output above for FBC release.
