@@ -74,6 +74,7 @@ image: registry.redhat.io/rhacm2/submariner-operator-bundle@sha256:abc123...
 ```
 
 **Manual edit:**
+
 ```bash
 vi catalog-template.yaml
 # Find the bundle entry for the version
@@ -81,6 +82,7 @@ vi catalog-template.yaml
 ```
 
 **Or scripted:**
+
 ```bash
 # Replace quay URL with registry.redhat.io URL (keeping SHA)
 sed -i "s|quay.io/redhat-user-workloads/submariner-tenant/submariner-bundle-0-${MINOR//./-}@sha256:${PROD_SHA}|registry.redhat.io/rhacm2/submariner-operator-bundle@sha256:${PROD_SHA}|g" catalog-template.yaml
@@ -96,7 +98,8 @@ make build-catalogs validate-catalogs
 ```
 
 **Expected changes** (`git status --short`):
-```
+
+```text
 M  catalog-template.yaml
 M  catalog-4-14/bundles/bundle-v${VERSION}.yaml
 M  catalog-4-15/bundles/bundle-v${VERSION}.yaml
@@ -107,9 +110,11 @@ M  catalog-4-19/bundles/bundle-v${VERSION}.yaml
 M  catalog-4-20/bundles/bundle-v${VERSION}.yaml
 ```
 
-**Note:** Example commit `8be62a2` has 7 files (pre-4-20). Current repo has 8 files: template + 7 catalogs (4-14 through 4-20).
+**Note:** Example commit `8be62a2` has 7 files (pre-4-20). Current repo has 8 files: template +
+7 catalogs (4-14 through 4-20).
 
 **IMPORTANT:** Catalog bundles should have **NO substantive changes**:
+
 - `catalog-template.yaml` - URL changes quay.io → registry.redhat.io (**source** change)
 - `catalog-4-*/bundles/bundle-v${VERSION}.yaml` - **ONLY** formatting/reordering (**output** unchanged)
 
@@ -117,20 +122,22 @@ M  catalog-4-20/bundles/bundle-v${VERSION}.yaml
 
 Build script auto-converts all quay URLs → registry.redhat.io (`scripts/render-catalog.sh:137-141`):
 
-| **Before this workflow** | **After this workflow** |
-|--------------------------|-------------------------|
-| catalog-template.yaml has **quay.io** URL | catalog-template.yaml has **registry.redhat.io** URL |
-| Build sed **converts** → registry.redhat.io | Build sed **no-op** → registry.redhat.io |
-| ✓ Output catalogs have registry.redhat.io | ✓ Output catalogs have registry.redhat.io (unchanged) |
+| **Before this workflow**                     | **After this workflow**                                 |
+|----------------------------------------------|-------------------------------------------------------- |
+| catalog-template.yaml has **quay.io** URL    | catalog-template.yaml has **registry.redhat.io** URL    |
+| Build sed **converts** → registry.redhat.io  | Build sed **no-op** → registry.redhat.io                |
+| ✓ Output catalogs have registry.redhat.io    | ✓ Output catalogs have registry.redhat.io (unchanged)   |
 
 This updates the source template to match what the build already produces, preventing future failures when quay.io URLs expire.
 
 Verify minimal diff (expect 4 lines changed per file - reordering only):
+
 ```bash
 git diff catalog-4-20/bundles/bundle-v${VERSION}.yaml
 ```
 
 Expected output - bundle image moved in relatedImages list (formatting change only):
+
 ```diff
  relatedImages:
 -  - image: registry.redhat.io/rhacm2/submariner-operator-bundle@sha256:abc123...
@@ -193,4 +200,5 @@ gh pr merge --squash
 - **Must be completed eventually** - builds will fail once quay.io URLs expire
 - Not immediately time-critical - quay.io URLs have retention period after prod release
 - Can be batched with other catalog updates before expiration
-- Only applies to current Konflux workflow - early bundles (0.17.x, 0.18.x) were added directly with registry.redhat.io URLs before Konflux and don't need this step
+- Only applies to current Konflux workflow - early bundles (0.17.x, 0.18.x) were added directly with
+  registry.redhat.io URLs before Konflux and don't need this step
