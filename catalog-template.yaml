@@ -159,6 +159,6 @@ entries:
     image: quay.io/redhat-user-workloads/submariner-tenant/submariner-bundle-0-21@sha256:bee92e4e7d305ab6f48d4a06fa7130f59ceebd004bbe802cd41a1eb4ffb98aee
     schema: olm.bundle
   - name: submariner.v0.22.0
-    image: quay.io/redhat-user-workloads/submariner-tenant/submariner-bundle-0-22@sha256:d87c84623b9007c591cb2ccfeefe74f97933e860947a898d5e9443dddf700ee6
+    image: quay.io/redhat-user-workloads/submariner-tenant/submariner-bundle-0-22@sha256:bb851aac8a0b44e3322da36c4349723e564ff8ce489210859210eddcb8f3c425
     schema: olm.bundle
 schema: olm.template.basic
