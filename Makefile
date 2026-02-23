@@ -16,11 +16,10 @@ $(OPM):
 .PHONY: opm
 opm: $(OPM)
 	# Checking installation of opm
-	@current_release_json=$$(curl -s "https://api.github.com/repos/operator-framework/operator-registry/releases/latest"); \
-	current_release=$$(printf '%s\n' "$${current_release_json}" | jq -r '.tag_name'); \
-	if ! $(OPM) version || [ "$$($(OPM) version | grep -o "v[0-9]\+\.[0-9]\+\.[0-9]\+" | head -1)" != "$${current_release}" ]; then \
-		echo "Installing opm $${current_release}"; \
-		download_url=$$(printf '%s\n' "$${current_release_json}" | jq -r '.assets[] | select(.name == "$(GOOS)-$(GOARCH)-opm").browser_download_url'); \
+	@pinned_release="v1.56.0"; \
+	if ! $(OPM) version || [ "$$($(OPM) version | grep -o "v[0-9]\+\.[0-9]\+\.[0-9]\+" | head -1)" != "$${pinned_release}" ]; then \
+		echo "Installing opm $${pinned_release}"; \
+		download_url="https://github.com/operator-framework/operator-registry/releases/download/$${pinned_release}/$(GOOS)-$(GOARCH)-opm"; \
 		curl --fail -Lo $(OPM) $${download_url}; \
 		chmod +x $(OPM); \
 	fi
