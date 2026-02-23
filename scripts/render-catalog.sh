@@ -95,6 +95,11 @@ for catalog_file in ${catalogs}; do
 
     if [[ "${schema}" == "olm.bundle" ]]; then
       bundle_version=$(yq eval '.properties[] | select(.type == "olm.package").value.version' "${doc_file}")
+      bundle_release=$(yq eval '.properties[] | select(.type == "olm.package").value.release' "${doc_file}")
+      # If there's a release field, append it to the version (e.g., 0.17.2+0.1725901206.p)
+      if [[ "${bundle_release}" != "null" && -n "${bundle_release}" ]]; then
+        bundle_version="${bundle_version}+${bundle_release}"
+      fi
       bundle_file="${catalog_dir}/bundles/bundle-v${bundle_version}.yaml"
       mv "${doc_file}" "${bundle_file}"
       echo "      - Wrote bundle to ${bundle_file}"
