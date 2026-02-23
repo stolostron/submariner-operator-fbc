@@ -68,15 +68,14 @@ $(GRPCURL):
 .PHONY: grpcurl
 grpcurl: $(GRPCURL)
 	# Checking installation of grpcurl
-	@current_release_json=$$(curl -s "https://api.github.com/repos/fullstorydev/grpcurl/releases/latest"); \
-	current_release=$$(printf '%s\n' "$${current_release_json}" | jq -r '.tag_name'); \
-	if ! $(GRPCURL) --version || [ "$$($(GRPCURL) --version 2>&1 | grep -o "v[0-9]\+\.[0-9]\+\.[0-9]\+" | head -1)" != "$${current_release}" ]; then \
-		echo "Installing grpcurl $${current_release}"; \
+	@pinned_release="v1.9.3"; \
+	if ! $(GRPCURL) --version || [ "$$($(GRPCURL) --version 2>&1 | grep -o "v[0-9]\+\.[0-9]\+\.[0-9]\+" | head -1)" != "$${pinned_release}" ]; then \
+		echo "Installing grpcurl $${pinned_release}"; \
 		[ "$(GOOS)" = "darwin" ] && go_os="osx" || go_os=$(GOOS); \
 		[ "$(GOARCH)" = "amd64" ] && go_arch="x86_64" || go_arch=$(GOARCH); \
-		download_file=grpcurl_$${current_release#v}_$${go_os}_$${go_arch}.tar.gz; \
-		mkdir $${download_file%.tar.gz}; \
-		download_url=$$(printf '%s\n' "$${current_release_json}" | jq -r '.assets[] | select(.name == "'$${download_file}'").browser_download_url'); \
+		download_file=grpcurl_$${pinned_release#v}_$${go_os}_$${go_arch}.tar.gz; \
+		download_url="https://github.com/fullstorydev/grpcurl/releases/download/$${pinned_release}/$${download_file}"; \
+		mkdir -p $${download_file%.tar.gz}; \
 		if curl --fail -Lo $${download_file%.tar.gz}/$${download_file} $${download_url}; then \
 			tar xvzf $${download_file%.tar.gz}/$${download_file} -C $${download_file%.tar.gz}; \
 			mv $${download_file%.tar.gz}/grpcurl $(GRPCURL); \
