@@ -1,4 +1,4 @@
-ARG OPM_IMAGE=quay.io/operator-framework/opm:v1.56.0
+ARG OPM_IMAGE=quay.io/operator-framework/opm:v1.64.0
 # OPM image to use:
 #For <= 4.14, use registry.redhat.io/openshift4/ose-operator-registry:v4.yy
 #For >= 4.15, use registry.redhat.io/openshift4/ose-operator-registry-rhel9:v4.yy
