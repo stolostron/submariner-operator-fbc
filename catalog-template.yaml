@@ -90,9 +90,6 @@ entries:
     package: submariner
     schema: olm.channel
   - entries:
-      - name: submariner.v0.22.1
-        replaces: submariner.v0.22.0
-        skipRange: '>=0.21.0 <0.22.1'
       - name: submariner.v0.22.0
         skipRange: '>=0.21.0 <0.22.0'
     name: stable-0.22
@@ -168,10 +165,7 @@ entries:
     image: quay.io/redhat-user-workloads/submariner-tenant/submariner-bundle-0-21@sha256:bee92e4e7d305ab6f48d4a06fa7130f59ceebd004bbe802cd41a1eb4ffb98aee
     schema: olm.bundle
   - name: submariner.v0.22.0
-    image: quay.io/redhat-user-workloads/submariner-tenant/submariner-bundle-0-22@sha256:bb851aac8a0b44e3322da36c4349723e564ff8ce489210859210eddcb8f3c425
-    schema: olm.bundle
-  - name: submariner.v0.22.1
-    image: quay.io/redhat-user-workloads/submariner-tenant/submariner-bundle-0-22@sha256:f6e3539a99189110cd190ff9b0b787fc6560d358044f4155fd4bf2a9e8b19625
+    image: registry.redhat.io/rhacm2/submariner-operator-bundle@sha256:bb851aac8a0b44e3322da36c4349723e564ff8ce489210859210eddcb8f3c425
     schema: olm.bundle
   - name: submariner.v0.23.1
     image: quay.io/redhat-user-workloads/submariner-tenant/submariner-bundle-0-23@sha256:0d48cf5d7fe3e70d3200b40062faf742862d0711c684c86dd9de91ffba3aae99
