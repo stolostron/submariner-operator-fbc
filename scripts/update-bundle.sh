@@ -2,7 +2,7 @@
 #
 # update-bundle.sh - Automate FBC catalog updates for Submariner releases
 #
-# Usage: ./scripts/update-bundle.sh --version X.Y.Z [--snapshot name] [--replace X.Y.Z]
+# Usage: ./scripts/update-bundle.sh --version X.Y.Z [--snapshot name] [--replace X.Y.Z] [--auto-convert]
 #
 # Scenarios:
 #   UPDATE: Rebuild with new SHA (most common)
@@ -19,6 +19,7 @@ REPO_ROOT=$(realpath "${SCRIPT_DIR}/..")
 VERSION=""
 SNAPSHOT=""
 REPLACE=""
+AUTO_CONVERT=false
 BUNDLE_IMAGE=""
 BUNDLE_SHA=""
 SCENARIO=""
@@ -37,6 +38,7 @@ parse_args() {
       --version) VERSION="$2"; shift 2 ;;
       --snapshot) SNAPSHOT="$2"; shift 2 ;;
       --replace) REPLACE="$2"; shift 2 ;;
+      --auto-convert) AUTO_CONVERT=true; shift ;;
       *) echo "ERROR: Unknown argument: $1"; exit 1 ;;
     esac
   done
@@ -45,7 +47,7 @@ parse_args() {
   if [ -z "$VERSION" ]; then
     echo "ERROR: --version required"
     echo ""
-    echo "Usage: $0 --version X.Y.Z [--snapshot name] [--replace X.Y.Z]"
+    echo "Usage: $0 --version X.Y.Z [--snapshot name] [--replace X.Y.Z] [--auto-convert]"
     exit 1
   fi
 
@@ -177,6 +179,112 @@ detect_scenario() {
 }
 
 #------------------------------------------------------------------------------
+# audit_bundle_urls - Check for quay.io bundles that should be converted
+#------------------------------------------------------------------------------
+audit_bundle_urls() {
+  echo "=== Auditing Bundle URLs ==="
+  
+  cd "$REPO_ROOT"
+
+  local NEEDS_CONVERSION=false
+  UNRELEASED_BUNDLES=()  # Global array for use by convert function
+  CONVERTIBLE_BUNDLES=()  # Global array for use by convert function
+  
+  # Find all quay.io bundles
+  local QUAY_BUNDLES=$(yq '.entries[] | select(.schema == "olm.bundle" and (.image | contains("quay.io"))) | {"name": .name, "image": .image}' catalog-template.yaml -o json | jq -c '.')
+
+  if [ -z "$QUAY_BUNDLES" ]; then
+    echo "✓ No quay.io bundles found (all use registry.redhat.io)"
+    echo ""
+    return 0
+  fi
+
+
+  local bundle_count=0
+  local convertible_count=0
+  local unreleased_count=0
+
+
+  while IFS= read -r bundle; do
+
+    local name=$(echo "$bundle" | jq -r '.name')
+    local image=$(echo "$bundle" | jq -r '.image')
+    local sha=$(echo "$image" | grep -oP 'sha256:\K[a-f0-9]+')
+
+    ((bundle_count++)) || true
+
+
+    # Check if bundle exists at registry.redhat.io
+    local prod_image="registry.redhat.io/rhacm2/submariner-operator-bundle@sha256:$sha"
+
+    # Temporarily disable exit-on-error to check image existence
+    set +e
+    timeout 10 skopeo inspect "docker://$prod_image" >/dev/null 2>&1
+    local exists=$?
+    set -e
+
+    if [ $exists -eq 0 ]; then
+      echo "⚠️  $name: RELEASED but using quay.io URL"
+      echo "   Current:  $image"
+      echo "   Available: $prod_image"
+      CONVERTIBLE_BUNDLES+=("$name")
+      NEEDS_CONVERSION=true
+      ((convertible_count++)) || true
+    else
+      echo "ℹ️  $name: UNRELEASED (quay.io workspace URL)"
+      UNRELEASED_BUNDLES+=("$name")
+      ((unreleased_count++)) || true
+    fi
+  done <<< "$QUAY_BUNDLES"
+  
+  echo ""
+  echo "Summary: $bundle_count quay.io bundle(s) - $convertible_count convertible, $unreleased_count unreleased"
+  
+  if [ "$NEEDS_CONVERSION" = true ]; then
+    if [ "$AUTO_CONVERT" = true ]; then
+      echo "🔄 Auto-convert enabled - will convert released bundles"
+    else
+      echo "💡 Tip: Use --auto-convert to automatically convert released bundles"
+    fi
+  fi
+  
+  echo ""
+
+  # Arrays are global and accessible by convert_released_bundles()
+
+  return 0
+}
+
+#------------------------------------------------------------------------------
+# convert_released_bundles - Convert quay.io bundles to registry.redhat.io
+#------------------------------------------------------------------------------
+convert_released_bundles() {
+  if [ ${#CONVERTIBLE_BUNDLES[@]} -eq 0 ]; then
+    return 0
+  fi
+  
+  echo "=== Converting Released Bundles ===" 
+  
+  cd "$REPO_ROOT"
+  
+  for name in "${CONVERTIBLE_BUNDLES[@]}"; do
+    # Get current image
+    local current_image=$(yq '.entries[] | select(.schema == "olm.bundle" and .name == "'"$name"'") | .image' catalog-template.yaml)
+    local sha=$(echo "$current_image" | grep -oP 'sha256:\K[a-f0-9]+')
+    local new_image="registry.redhat.io/rhacm2/submariner-operator-bundle@sha256:$sha"
+    
+    # Update template
+    yq '(.entries[] | select(.schema == "olm.bundle" and .name == "'"$name"'") | .image) = "'"$new_image"'"' catalog-template.yaml -i
+    
+    echo "✓ $name: quay.io → registry.redhat.io"
+  done
+  
+  echo "✓ Converted ${#CONVERTIBLE_BUNDLES[@]} bundle(s)"
+  echo ""
+}
+
+
+#------------------------------------------------------------------------------
 # update_template_add - ADD scenario: new channel + bundle
 #------------------------------------------------------------------------------
 update_template_add() {
@@ -223,6 +331,35 @@ update_template_add() {
       PREV_YSTREAM_DASH=$(grep -oP 'lighthouse-agent-\K[0-9]+-[0-9]+' .tekton/images-mirror-set.yaml | head -1)
 
       if [ -n "$PREV_YSTREAM_DASH" ]; then
+        # Check for unreleased bundles from previous Y-stream before updating mirrors
+        local OLD_YSTREAM_BUNDLES=$(yq '.entries[] | select(.schema == "olm.bundle" and (.image | contains("'"submariner-bundle-${PREV_YSTREAM_DASH}"'")))' catalog-template.yaml)
+
+        if [ -n "$OLD_YSTREAM_BUNDLES" ]; then
+          echo ""
+          echo "⚠️  WARNING: Found unreleased bundles using -${PREV_YSTREAM_DASH} mirrors:"
+          echo "$OLD_YSTREAM_BUNDLES" | yq '.name' | sed 's/^/   - /'
+          echo ""
+          echo "   These bundles will lose mirror access after updating to -${YSTREAM_DASH}"
+          echo "   Options:"
+          echo "     1. Remove unreleased bundles from catalog (recommended if never releasing)"
+          echo "     2. Convert to registry.redhat.io if released (use --auto-convert)"
+          echo "     3. Keep both mirror versions (will accumulate old versions)"
+          echo ""
+
+          # Give user a chance to abort
+          if [ -t 0 ]; then
+            read -p "   Continue anyway? [y/N] " -n 1 -r
+            echo
+            if [[ ! $REPLY =~ ^[Yy]$ ]]; then
+              echo "Aborted by user"
+              exit 1
+            fi
+          else
+            echo "   Non-interactive mode: proceeding automatically"
+          fi
+          echo ""
+        fi
+
         # Replace all component version suffixes
         sed -i "s/-${PREV_YSTREAM_DASH}/-${YSTREAM_DASH}/g" .tekton/images-mirror-set.yaml
         echo "✓ Updated image mirror set: -$PREV_YSTREAM_DASH → -$YSTREAM_DASH"
@@ -592,6 +729,13 @@ main() {
 
   # Step 2: Detect scenario
   detect_scenario
+
+  # Step 2.5: Audit bundle URLs and optionally convert
+  audit_bundle_urls
+
+  if [ "$AUTO_CONVERT" = true ]; then
+    convert_released_bundles
+  fi
 
   # Step 3: Update catalog-template.yaml based on scenario
   case "$SCENARIO" in
