@@ -1,12 +1,44 @@
 # Update Catalog Template to Production Bundle URL
 
-**When:** After prod release completes (must be done before quay.io URLs expire, but not time-critical)
+**When:** After prod release completes (not immediately urgent, but before
+quay.io URLs expire)
 
-**Why:** Prevents build failures from expired quay.io pre-release URLs by updating to permanent registry.redhat.io URLs
+**Why:** Bundle images are initially added with temporary quay.io workspace
+URLs. After production release, these must be updated to permanent
+registry.redhat.io URLs to prevent build failures when workspace URLs expire.
 
-**Example:** See commit `8be62a2` - Updated 0.21.0 template to use released bundle URL
+**Priority:** Medium (complete within days/weeks after prod release, not immediately critical)
 
-## Prerequisites
+**Context:** Bundles added from Konflux stage/pre-release builds use temporary quay.io workspace URLs. The
+`render-catalog.sh` script auto-converts these to registry.redhat.io during catalog builds. This workflow updates
+the template source to match generated output, preventing future failures when temporary quay.io URLs expire.
+
+## Automated Workflow (Recommended)
+
+Use the `AUTO_CONVERT=true` flag to automatically convert released bundles:
+
+```bash
+make update-bundle VERSION=0.23.1 AUTO_CONVERT=true
+```
+
+**What the automation does:**
+
+1. Scans catalog-template.yaml for bundles with quay.io URLs
+2. Verifies each bundle is released (checks registry.redhat.io via skopeo with
+   30s timeout)
+3. Converts released bundles to production URLs (preserving SHA)
+4. Skips unreleased bundles (warns if found)
+5. Rebuilds and validates all catalogs
+6. Creates commit with URL changes
+
+**This is the preferred method.** The manual workflow below is only for
+special cases or troubleshooting.
+
+---
+
+## Manual Workflow (Special Cases Only)
+
+### Prerequisites
 
 - Prod release completed in submariner-release-management
 - Bundle already in catalog-template.yaml with quay.io URL
@@ -17,8 +49,10 @@
 # For version 0.21.2
 VERSION=0.21.2
 MINOR=${VERSION%.*}  # e.g., 0.21
+Y_STREAM=${MINOR#*.}  # e.g., 21 (for bundle naming)
 
 # Get prod bundle URL from release files
+# NOTE: Replace 'dfarrell07' with your GitHub username or use 'stolostron' for official repo
 REPO=https://raw.githubusercontent.com/dfarrell07/submariner-release-management
 PROD_URL=$(curl -s \
   $REPO/refs/heads/main/releases/${MINOR}/prod/submariner-${VERSION//./-}-*.yaml \
@@ -85,16 +119,16 @@ vi catalog-template.yaml
 
 ```bash
 # Replace quay URL with registry.redhat.io URL (keeping SHA)
-sed -i "s|quay.io/redhat-user-workloads/submariner-tenant/submariner-bundle-0-${MINOR//./-}@sha256:${PROD_SHA}|registry.redhat.io/rhacm2/submariner-operator-bundle@sha256:${PROD_SHA}|g" catalog-template.yaml
+sed -i "s|quay.io/redhat-user-workloads/submariner-tenant/submariner-bundle-0-${Y_STREAM}@sha256:${PROD_SHA}|registry.redhat.io/rhacm2/submariner-operator-bundle@sha256:${PROD_SHA}|g" catalog-template.yaml
 ```
 
-## 3. Build and Validate Catalogs
+## 3. Build, Validate, and Test Catalogs
 
-Build catalogs (~2-5 min):
+Build, validate, and test catalogs (~2-5 min):
 
 ```bash
 cd ~/konflux/submariner-operator-fbc
-make build-catalogs validate-catalogs
+make build-catalogs validate-catalogs test-scripts
 ```
 
 **Expected changes** (`git status --short`):
@@ -108,64 +142,48 @@ M  catalog-4-17/bundles/bundle-v${VERSION}.yaml
 M  catalog-4-18/bundles/bundle-v${VERSION}.yaml
 M  catalog-4-19/bundles/bundle-v${VERSION}.yaml
 M  catalog-4-20/bundles/bundle-v${VERSION}.yaml
+M  catalog-4-21/bundles/bundle-v${VERSION}.yaml
 ```
 
-**Note:** Example commit `8be62a2` has 7 files (pre-4-20). Current repo has 8 files: template +
-7 catalogs (4-14 through 4-20).
+**Note:** Example commit `8be62a2` has 7 files (pre-4-20, pre-4-21). Current repo has
+9 files: template + 8 catalogs (4-14 through 4-21).
 
 **IMPORTANT:** Catalog bundles should have **NO substantive changes**:
 
 - `catalog-template.yaml` - URL changes quay.io → registry.redhat.io (**source** change)
 - `catalog-4-*/bundles/bundle-v${VERSION}.yaml` - **ONLY** formatting/reordering (**output** unchanged)
 
-**Why no URL changes in built catalogs?**
+**Why no URL changes in built catalogs?** The build script auto-converts quay.io → registry.redhat.io
+(`scripts/render-catalog.sh:145`). By updating the template now, the build becomes a no-op, preventing future
+failures when quay.io URLs expire.
 
-Build script auto-converts all quay URLs → registry.redhat.io (`scripts/render-catalog.sh:137-141`):
+Verify minimal changes:
 
-| **Before this workflow**                     | **After this workflow**                                 |
-|----------------------------------------------|-------------------------------------------------------- |
-| catalog-template.yaml has **quay.io** URL    | catalog-template.yaml has **registry.redhat.io** URL    |
-| Build sed **converts** → registry.redhat.io  | Build sed **no-op** → registry.redhat.io                |
-| ✓ Output catalogs have registry.redhat.io    | ✓ Output catalogs have registry.redhat.io (unchanged)   |
+- `git diff` shows only formatting/reordering (no URL changes in built catalogs)
+- Each bundle file: `2 insertions(+), 2 deletions(-)` - bundle image moved in relatedImages list:
 
-This updates the source template to match what the build already produces, preventing future failures when quay.io URLs expire.
+  ```diff
+   relatedImages:
+  -  - image: registry.redhat.io/.../submariner-operator-bundle@sha256:...
+     - image: registry.redhat.io/.../lighthouse-agent-rhel9@sha256:...
+     ...
+  +  - image: registry.redhat.io/.../submariner-operator-bundle@sha256:...
+  ```
 
-Verify minimal diff (expect 4 lines changed per file - reordering only):
-
-```bash
-git diff catalog-4-20/bundles/bundle-v${VERSION}.yaml
-```
-
-Expected output - bundle image moved in relatedImages list (formatting change only):
-
-```diff
- relatedImages:
--  - image: registry.redhat.io/rhacm2/submariner-operator-bundle@sha256:abc123...
--    name: ""
-   - image: registry.redhat.io/rhacm2/lighthouse-agent-rhel9@sha256:...
-     name: submariner-lighthouse-agent
-   ...
-+  - image: registry.redhat.io/rhacm2/submariner-operator-bundle@sha256:abc123...
-+    name: ""
-   - image: registry.redhat.io/rhacm2/submariner-rhel9-operator@sha256:...
-```
-
-Each bundle file should show `2 insertions(+), 2 deletions(-)` - same content, different position.
-
-If you see URL changes or content differences, something is wrong - stop and investigate.
+- If you see URL changes or content differences, stop and investigate.
 
 ## 4. Create PR
 
 Create branch and commit:
 
 ```bash
-# Branch: X.Y-prod-url (example: 21.2-prod-url)
-git checkout -b ${VERSION}-prod-url
+# Branch naming: <major>.<minor>-prod-url (example for 0.21.2: 21.2-prod-url)
+git checkout -b 21.2-prod-url
 git add catalog-template.yaml catalog-4-*/
-git commit -s -m "Update catalog template to prod bundle URL for v${VERSION}" \
+git commit -s -m "Update catalog template to prod bundle URL for v0.21.2" \
   -m "Changes quay.io pre-release URL to registry.redhat.io production URL." \
   -m "Same SHA digest, prevents quay.io expiration."
-git push origin ${VERSION}-prod-url
+git push origin 21.2-prod-url
 ```
 
 Create pull request:
@@ -187,7 +205,7 @@ Wait for CI checks (~5-15 min):
 gh pr checks
 ```
 
-All checks should pass (FBC builds for 4-16 through 4-20).
+All checks should pass (FBC builds for 4-14 through 4-21).
 
 Merge when passing:
 
@@ -202,3 +220,39 @@ gh pr merge --squash
 - Can be batched with other catalog updates before expiration
 - Only applies to current Konflux workflow - early bundles (0.17.x, 0.18.x) were added directly with
   registry.redhat.io URLs before Konflux and don't need this step
+
+## Troubleshooting
+
+### Bundle not found in production
+
+**Error:** `Could not find production bundle URL in release files`
+
+**Solutions:**
+
+- Verify prod release completed in submariner-release-management
+- Check REPO variable points to correct GitHub repo/branch
+- Confirm VERSION matches an actual released version
+
+### SHAs don't match
+
+**Error:** `SHAs don't match! Current: ... Prod: ...`
+
+**Solutions:**
+
+- Verify you're updating the correct bundle version
+- Check that template hasn't been manually edited with wrong SHA
+- Confirm production release matches the bundle in template
+
+### sed command doesn't match any URLs
+
+**Error:** Template unchanged after sed command (Step 2)
+
+**Solutions:**
+
+- Verify Y_STREAM extraction is correct (should be "21" for version 0.21.2)
+- Check template actually contains quay.io URLs (not already converted)
+- Run `grep quay.io catalog-template.yaml` to verify URLs exist
+
+## See Also
+
+- [Update FBC Catalog with New Bundle](update-catalog.md) - Main workflow for adding/updating bundles (this workflow typically follows that one)
