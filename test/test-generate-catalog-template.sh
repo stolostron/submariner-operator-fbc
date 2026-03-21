@@ -13,18 +13,22 @@ cd "${REPO_ROOT_DIR}"
 # Run the script
 ./scripts/generate-catalog-template.sh
 
-# Basic verification: Check that the files were created
-if [ ! -f catalog-template-4-14.yaml ]; then
-  echo "Test failed: catalog-template-4-14.yaml was not created."
+# Verify all 8 OCP version templates were created (4-14 through 4-21)
+EXPECTED_VERSIONS=(4-14 4-15 4-16 4-17 4-18 4-19 4-20 4-21)
+FAILED=0
+
+for VERSION in "${EXPECTED_VERSIONS[@]}"; do
+  if [ ! -f "catalog-template-${VERSION}.yaml" ]; then
+    echo "Test failed: catalog-template-${VERSION}.yaml was not created."
+    FAILED=1
+  fi
+done
+
+if [ $FAILED -eq 1 ]; then
   exit 1
 fi
 
-if [ ! -f catalog-template-4-15.yaml ]; then
-  echo "Test failed: catalog-template-4-15.yaml was not created."
-  exit 1
-fi
-
-echo "Test passed: generate-catalog-template.sh ran without error and created the expected files."
+echo "Test passed: generate-catalog-template.sh created all 8 expected catalog templates (4-14 through 4-21)."
 
 # Cleanup
 rm catalog-template-*-*.yaml

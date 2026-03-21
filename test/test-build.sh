@@ -2,7 +2,14 @@
 
 set -euo pipefail
 
-./scripts/reset-test-environment.sh
+# Find clean commit before test artifacts (search back for non-test commit)
+CLEAN_COMMIT=$(git log --oneline -10 | grep -v "Update bundle\|Replace bundle\|Add bundle" | head -1 | awk '{print $1}' || true)
+if [ -z "$CLEAN_COMMIT" ]; then
+  # Fallback to HEAD if all recent commits are test commits
+  CLEAN_COMMIT="HEAD"
+fi
+
+./scripts/reset-test-environment.sh "$CLEAN_COMMIT"
 
 SCRIPT_DIR=$( cd -- "$( dirname -- "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )
 REPO_ROOT_DIR=$(realpath "${SCRIPT_DIR}/..")

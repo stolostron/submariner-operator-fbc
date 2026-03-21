@@ -124,11 +124,25 @@ test-scripts: opm
 	./test/test.sh
 test-script: test-scripts
 
-.PHONY: add-bundle
-add-bundle:
-	./build/add-bundle.sh $(BUNDLE_IMAGE) $(REPLACES) $(SKIP_RANGE)
-
 .PHONY: validate-markdown md
 validate-markdown:
 	npx markdownlint-cli2 ".agents/workflows/*.md" "*.md"
 md: validate-markdown
+
+# Update bundle in catalog (ADD/UPDATE/REPLACE scenarios)
+# Usage:
+#   make update-bundle VERSION=0.22.1                        # UPDATE scenario
+#   make update-bundle VERSION=0.22.0                        # ADD scenario
+#   make update-bundle VERSION=0.21.2 REPLACE=0.21.1         # REPLACE scenario
+#   make update-bundle VERSION=0.22.1 SNAPSHOT=submariner-0-22-xxxxx       # Explicit snapshot
+#   make update-bundle VERSION=0.22.1 AUTO_CONVERT=true      # Auto-convert released bundles
+.PHONY: update-bundle
+update-bundle:
+	@if [ -z "$(VERSION)" ]; then \
+		echo "ERROR: VERSION required (e.g., VERSION=0.22.1)"; \
+		exit 1; \
+	fi
+	./scripts/update-bundle.sh --version "$(VERSION)" \
+		$(if $(SNAPSHOT),--snapshot "$(SNAPSHOT)") \
+		$(if $(REPLACE),--replace "$(REPLACE)") \
+		$(if $(AUTO_CONVERT),--auto-convert)

@@ -123,13 +123,14 @@ done
 
 echo "--> Decomposition complete."
 
-# Use oldest catalog to populate bundle names for reference
-oldest_catalog=$(find catalog-* -type d | head -1)
-
-for bundle in "${oldest_catalog}"/bundles/*.yaml; do
-  bundle_image=$(yq '.image' "${bundle}")
-  bundle_name=$(yq '.name' "${bundle}")
-done
+# Use oldest catalog to populate bundle names for reference (currently unused)
+# oldest_catalog=$(find catalog-* -type d | head -1)
+# shopt -s nullglob
+# for bundle in "${oldest_catalog}"/bundles/*.yaml; do
+#   bundle_image=$(yq '.image' "${bundle}")
+#   bundle_name=$(yq '.name' "${bundle}")
+# done
+# shopt -u nullglob
 
 echo "--> Sorting the main catalog-template.yaml file..."
 # Sort catalog
@@ -141,6 +142,16 @@ yq '.entries |=
 
 echo "--> Replacing development image URLs with production URLs..."
 # Replace the Konflux images with production images
-for file in catalog-*/bundles/*.yaml; do
-  sed -i -E 's%quay.io/redhat-user-workloads/[^:@]+%registry.redhat.io/rhacm2/submariner-operator-bundle%g' "${file}"
-done
+# Use nullglob to handle case where no bundles exist
+shopt -s nullglob
+bundle_files=(catalog-*/bundles/*.yaml)
+shopt -u nullglob
+
+if [ ${#bundle_files[@]} -eq 0 ]; then
+  echo "    --> No bundle files found, skipping URL replacement"
+else
+  for file in "${bundle_files[@]}"; do
+    sed -i -E 's%quay.io/redhat-user-workloads/[^:@]+%registry.redhat.io/rhacm2/submariner-operator-bundle%g' "${file}"
+  done
+  echo "    --> Replaced URLs in ${#bundle_files[@]} bundle files"
+fi

@@ -68,8 +68,10 @@ previous catalog (e.g., `catalog-4-20`) and include only bundles >= MIN_SUB vers
 
 ## 4. Fix Tekton Build Args
 
-The bot's `.tekton/` files are missing required `build-args`. Add this block after `value: catalog.Dockerfile`
-and before `pipelineSpec:` in both files:
+**Why:** The bot creates basic `.tekton/` files but doesn't know which catalog directory to build or which OPM
+version to use. Without `build-args`, the build fails with "missing INPUT_DIR build argument".
+
+Add this block after `value: catalog.Dockerfile` and before `pipelineSpec:` in both `.tekton/` files:
 
 ```yaml
   - name: build-args
@@ -78,27 +80,20 @@ and before `pipelineSpec:` in both files:
     - OPM_IMAGE=registry.redhat.io/openshift4/ose-operator-registry-rhel9:v4.21  # ← Use your ${NEW_DOT}
 ```
 
-Edit both files:
+Edit and verify:
 
 ```bash
-# Reference working file for exact placement
-grep -B2 -A6 "dockerfile" .tekton/submariner-fbc-4-20-push.yaml | head -10
-
-# Edit both files - add build-args block after "value: catalog.Dockerfile" line
-vim .tekton/submariner-fbc-${NEW}-push.yaml
-vim .tekton/submariner-fbc-${NEW}-pull-request.yaml
+# Edit both files
+vim .tekton/submariner-fbc-${NEW}-push.yaml .tekton/submariner-fbc-${NEW}-pull-request.yaml
 
 # Verify
 grep -A4 "build-args" .tekton/submariner-fbc-${NEW}-push.yaml
 ```
 
-**Why:** The bot creates basic `.tekton/` files but doesn't know which catalog directory to build or
-which OPM version to use. Without these args, the build fails with "missing INPUT_DIR build argument".
-
-## 5. Validate and Commit
+## 5. Validate, Test, and Commit
 
 ```bash
-make validate-catalogs
+make validate-catalogs test-scripts
 
 # Commit fix ON TOP of bot's commit
 git add drop-versions.json catalog-${NEW}/ .tekton/submariner-fbc-${NEW}-*.yaml
@@ -123,29 +118,38 @@ git log --oneline -2
 
 ## 6. Merge the Fixed PR
 
-Wait for CI to pass, then merge:
+Wait for CI checks (~5-15 min), then verify:
 
 ```bash
-gh pr view  # Check status
-gh pr merge --squash  # Merge when ready
+gh pr checks
+```
+
+CI tests FBC builds for all OCP versions (4-14 through new version) with multiple scenarios. All checks must pass.
+
+Merge when passing:
+
+```bash
+gh pr merge --squash
 ```
 
 ## 7. Update Workflow Docs (this repo)
 
 Update OCP version references in workflow files:
 
-**`.agents/workflows/update-catalog.md`:**
+**[`update-catalog.md`](update-catalog.md):**
 
-- Version range: `"4-16 through 4-20"` → include new version
-- Version loop: `for VERSION in 16 17 18 19 20` → add new version number
+- Version range: `"4-14 through 4-21"` → update to include new version
+- Version loop: `for VERSION in 14 15 16 17 18 19 20 21` → add new version number
 
-**`.agents/workflows/update-prod-url.md`:**
+**[`update-prod-url.md`](update-prod-url.md):**
 
-- Expected files list: `M  catalog-4-20/bundles/...` block → add new catalog line
-- Catalog count: `"7 catalogs (4-14 through 4-20)"` → update count and range
-- Version range: `"4-16 through 4-20"` → include new version
+- Expected files list: `M  catalog-4-21/bundles/...` block → add new catalog line
+- Catalog count: `"8 catalogs (4-14 through 4-21)"` → update count and range
+- Version range: `"4-14 through 4-21"` → update to include new version
 
 Commit as separate PR or include with other changes.
+
+**See also:** [Update FBC Catalog workflow](update-catalog.md) for ongoing catalog maintenance after new OCP version is added.
 
 ## Done When
 

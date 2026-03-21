@@ -1,0 +1,26 @@
+---
+# FBC catalog template with empty 0.22 channel for testing ADD scenario
+# Contains stable-0.21 with bundles and empty stable-0.22 channel
+entries:
+  - defaultChannel: stable-0.22
+    name: submariner
+    schema: olm.package
+  - name: stable-0.21
+    package: submariner
+    schema: olm.channel
+    entries:
+      - name: submariner.v0.21.2
+        replaces: submariner.v0.21.0
+        skipRange: '>=0.20.0 <0.21.2'
+      - name: submariner.v0.21.0
+        skipRange: '>=0.20.0 <0.21.0'
+  - name: stable-0.22
+    package: submariner
+    schema: olm.channel
+    entries: []
+  - name: submariner.v0.21.0
+    image: registry.redhat.io/rhacm2/submariner-operator-bundle@sha256:7a23eb13e0197b4eab7a645ff18c1abd63a39234c55c0e19b8c1c39aa2fe6e99
+    schema: olm.bundle
+  - name: submariner.v0.21.2
+    image: registry.redhat.io/rhacm2/submariner-operator-bundle@sha256:abcdef1234567890abcdef1234567890abcdef1234567890abcdef1234567890
+    schema: olm.bundle
