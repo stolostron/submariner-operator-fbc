@@ -1,0 +1,15 @@
+---
+name: Fast Tests
+'on':
+  push:
+    branches:
+      - main
+  pull_request:
+permissions: {}
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Run tests
+        run: make test
