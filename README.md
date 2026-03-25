@@ -1,126 +1,155 @@
 # Submariner Operator FBC
 
-This repository manages the File-Based Catalog (FBC) for the `submariner` operator.
+This repository manages File-Based Catalogs (FBC) for the Submariner operator across OCP versions 4-14 through 4-21
+using automated GitOps workflows.
 
-## Overview
+**What is FBC?** Modern declarative YAML format for distributing Kubernetes operators via OLM. Unlike legacy index
+images, FBCs define operator bundles, channels, and upgrade paths as files, enabling GitOps workflows and
+multi-version support.
 
-This repository contains the necessary templates, scripts, and configurations to generate and manage the Submariner operator
-catalog for various OpenShift versions.
+## Glossary
+
+**Core Concepts:**
+
+- **OLM**: Manages operator installation, upgrades, and lifecycle
+- **Bundle**: Versioned operator package with manifests and metadata
+- **Channel**: Upgrade path grouping bundles (e.g., `stable-0.22`)
+- **skipRange**: OLM metadata controlling upgrade paths
+
+**Version Notation:**
+
+- `0.X.Y` (semver): Bundle names (e.g., `submariner.v0.22.1`)
+- `0-X-Y` (dashed): URLs and snapshots (e.g., `submariner-0-22-1`)
+- `0-X` (Y-stream): Component names (e.g., `submariner-bundle-0-22`)
+
+**Konflux & Registry:**
+
+- **Konflux**: Red Hat CI/CD platform for operator builds
+- **Snapshot**: Konflux build output containing bundle image
+- **quay.io**: Temporary workspace registry (pre-release)
+- **registry.redhat.io**: Production registry (released bundles)
+
+## Repository Structure
+
+```text
+submariner-operator-fbc/
+├── catalog-template.yaml       # Source template for all catalogs (EDIT THIS, not generated catalogs)
+├── catalog-4-14/ ... 4-21/     # Generated catalogs (DO NOT EDIT - rebuilt from template)
+├── scripts/
+│   ├── update-bundle.sh        # Main automation for bundle updates
+│   ├── generate-catalog-template.sh
+│   ├── render-catalog.sh
+│   ├── format-yaml.sh
+│   └── lib/
+│       ├── catalog-functions.sh   # Pure functions for FBC manipulation
+│       └── test-helpers.sh        # Test assertion helpers
+├── build/
+│   └── build.sh                # Orchestrates catalog generation
+├── .agents/workflows/          # Detailed workflow documentation
+└── test/
+    ├── unit/                   # Unit tests (pure function testing)
+    ├── integration/            # Integration tests (workflow scenarios)
+    ├── scripts/                # Build validation tests (catalog generation, template rendering)
+    ├── e2e/                    # End-to-end tests (real Konflux cluster, real registries)
+    ├── fixtures/               # Test data (catalog templates, snapshots)
+    ├── lib/                    # Shared test infrastructure (mock commands, test constants)
+    └── test.sh                 # Test orchestrator (runs all tests)
+```
+
+## Which Workflow Do I Need?
+
+**Choose based on your task:**
+
+1. **Adding or updating Submariner bundles** (most common)
+   → Use [update-catalog.md](.agents/workflows/update-catalog.md) - Add new versions or rebuild with new image SHAs
+
+2. **Converting staged URLs to production** (after prod release)
+   → Use [update-prod-url.md](.agents/workflows/update-prod-url.md) - Update template from quay.io to registry.redhat.io
+
+3. **Adding support for new OCP version** (when Red Hat releases new OpenShift)
+   → Use [add-ocp-version.md](.agents/workflows/add-ocp-version.md) - Configure catalog for new OCP version
+
+## Quick Start
+
+```bash
+# Update existing version with new SHA (most common)
+make update-bundle VERSION=0.22.1
+
+# Add first release of new Y-stream
+make update-bundle VERSION=0.23.0
+
+# Skip broken version
+make update-bundle VERSION=0.22.2 REPLACE=0.22.1
+```
+
+**Prerequisites:** Konflux access (`oc login`), `gh` CLI, off VPN, release completed in submariner-release-management
+
+**After:** Script creates signed commit. Review with `git show`, push, create PR.
+See [update-catalog.md](.agents/workflows/update-catalog.md) for details.
 
 ## Catalog Generation
 
-The primary script for building the catalogs is `build/build.sh`, which is invoked by the `make build-catalogs` command. This
-script orchestrates a series of helper scripts to perform the following steps:
+The `make build-catalogs` command:
 
-1. **Clean Previous Artifacts:** Before starting the build, any existing `catalog-*` directories from previous runs are removed to
-   ensure a clean build environment.
-2. **Generate Version-Specific Templates:** The `scripts/generate-catalog-template.sh` script takes the main `catalog-template.yaml`
-   as a base. For each supported OCP version defined in `drop-versions.json` (where keys are OCP versions and values are the minimum
-   supported Submariner versions), it creates a version-specific template (e.g., `catalog-template-4-19.yaml`). It then prunes
-   (removes) older bundles and channels from each of these templates according to the versions specified in `drop-versions.json`. This
-   pruning also includes removing the `replaces` field from channels that end up with only one bundle.
-3. **Render and Decompose Catalogs:** The `scripts/render-catalog.sh` script processes each of the version-specific templates (e.g.,
-   `catalog-template-4-19.yaml`) generated in the previous step. For each template, it first uses the `opm` tool to render it into a
-   temporary, monolithic `catalog-4-19.yaml` file. Note that OCP versions >= 4.17 require an additional `--migrate-level` flag during
-   rendering for compatibility. It then immediately decomposes this monolithic file, splitting it into a standard file-based catalog
-   structure (directories for bundles, channels, and the package file) inside the `catalog-4-19/` directory. The temporary monolithic
-   file is deleted upon completion.
-4. **Sort Catalog Entries:** The main `catalog-template.yaml` file's entries are sorted for consistent ordering.
-5. **Replace Image URLs:** Development image URLs (e.g., `quay.io/redhat-user-workloads/...`) are replaced with production Red Hat
-   URLs (e.g., `registry.redhat.io/...`) to prepare the catalog for production environments.
-6. **Format:** The `scripts/format-yaml.sh` script ensures all YAML files are consistently formatted using `yq`.
+1. Filters `catalog-template.yaml` per OCP version using `drop-versions.json`
+2. Renders templates with `opm` (4.17+ use `--migrate-level` flag), decomposes to file-based structure
+3. Converts quay.io URLs to registry.redhat.io
+4. Validates and formats YAML
 
-## Catalog Management
-
-This repository provides scripts to manage the catalog content incrementally. The `catalog-template.yaml` file is the source of
-truth for the catalog, and the scripts modify it directly.
-
-### Adding a Bundle
-
-To add a new operator bundle to the catalog, use the `make add-bundle` target. This target takes the `BUNDLE_IMAGE` variable as an
-argument and will add the specified bundle to the `catalog-template.yaml`.
-
-```bash
-make add-bundle BUNDLE_IMAGE=quay.io/my-bundle:latest
-```
-
-### Fetching a Catalog for Reference
-
-To fetch the Submariner operator catalog from a specific OpenShift version for reference, use the
-`scripts/fetch-catalog-containerized.sh` script. This script takes the OpenShift version and the package name as arguments.
-
-```bash
-./scripts/fetch-catalog-containerized.sh 4.19 submariner
-```
-
-This will produce a file like `submariner-catalog-config-4.19.yaml` which you can use as a reference for the required fields when
-adding a new bundle.
+See `build/build.sh` for implementation.
 
 ## Testing
 
-The repository includes a comprehensive set of tests and GitHub Actions to ensure the integrity of the catalog and the functionality
-of the management scripts.
+Comprehensive test coverage organized into three levels:
 
-The following `make` targets are available for testing:
+- `make test-scripts` - Fast tests (unit + integration, ~6-7s) - **runs in CI**
+- `make test-e2e` - End-to-end tests (real cluster/network, ~5-15min) - **manual only**
+- `make validate-catalogs` - Validates generated catalogs with `opm`
+- `make test-images` - Tests catalog image functionality
 
-- `make test-scripts`: Runs the main test script at `test/test.sh`, which executes a series of tests for the catalog management
-  scripts.
-- `make validate-catalog`: Validates the generated catalogs using `opm` to ensure they are well-formed and all references are
-  correct.
-- `make test-image`: Builds, runs, and tests the catalog image. This includes verifying that the image can be served correctly and
-  that the package list is accurate.
+**Test organization:**
 
-These tests are automatically executed on every push and pull request via GitHub Actions.
+- `test/unit/` - Pure function tests (~2s, runs in CI). 4 suites: audit-bundle-urls, catalog-queries, convert-released-bundles, format-validators
+- `test/integration/` + `test/scripts/` - Workflow scenarios (~4-5s, runs in CI). ADD/UPDATE/REPLACE workflows with mocked external deps
+- `test/e2e/` - Real cluster/registry tests (~5-15min, manual only). Requires: `oc login`, `podman login registry.redhat.io`
+
+Use `SKIP_AUTH_TESTS=true make test-scripts` for local testing without cluster access.
 
 ## Makefile Targets
 
-The following `make` targets are available for use:
+### Primary Targets
+
+| Target | Description | Usage |
+| --- | --- | --- |
+| `update-bundle` | Automated workflow to add/update operator bundles with scenario detection | `make update-bundle VERSION=0.23.1` |
+| `build-catalogs` | Builds File-Based Catalogs for all 8 supported OCP versions (4-14 through 4-21) | `make build-catalogs` |
+| `validate-catalogs` | Validates FBC structure and bundle references using `opm validate` | `make validate-catalogs` |
+| `test-scripts` | Runs the test suite (56 assertions across unit, integration, and build validation tests) | `make test-scripts` |
+| `clean` | Removes build artifacts and temporary files | `make clean` |
+
+### Container Image Targets
 
 | Target | Description |
 | --- | --- |
-| `build-catalogs` | Builds the File-Based Catalogs (FBC) for all supported OpenShift versions. |
-| `validate-catalogs` | Validates the generated FBC using `opm validate` to ensure well-formed catalogs with correct references. |
-| `build-images` | Builds the OCI image for the generated catalog. |
-| `run-images` | Runs the built catalog OCI image in the background on port 50051. |
-| `test-images` | Tests the built catalog OCI image, verifying availability and package list. |
-| `stop-images` | Stops any running catalog OCI image instances. |
-| `test-scripts` | Executes the main test script (`test/test.sh`) for catalog management scripts. |
-| `clean` | Removes build artifacts and temporary files including `bin/` and `catalog-template-4-*.yaml`. |
-| `opm` | Installs the `opm` (Operator Package Manager) binary. |
+| `build-images` | Builds the OCI image for the generated catalog |
+| `run-images` | Runs the catalog OCI image in the background on port 50051 |
+| `test-images` | Tests the running catalog image (availability and package list) |
+| `stop-images` | Stops any running catalog OCI image instances |
 
-## TODOs
+### Development Targets
 
-- **Fix Bundle Version Inconsistency:** There is a known bug in some upstream bundles where the version in the image label (e.g.,
-  `v0.21.0-rc0`) does not match the version in the internal CSV metadata (e.g., `v0.21.0`). This causes the `opm validate` command
-  to fail. A failing test case that demonstrates this issue can be found at `test/broken-test-add-bundles-from-file.sh`. This test
-  should be moved out of the `broken-` directory and into the main test suite once the upstream bundle is fixed.
+| Target | Description |
+| --- | --- |
+| `opm` | Installs the `opm` (Operator Package Manager) binary v1.56.0 |
+| `grpcurl` | Installs the `grpcurl` tool v1.9.3 for testing |
+| `validate-markdown` | Validates all Markdown documentation files |
 
-- **Channel Naming Convention:** We need to clarify the correct channel naming convention for the Submariner operator.
-  - The `submariner-catalog-config-4.19.yaml` from the index container and the current downstream bundle both use `stable`.
+## Known Issues
 
-    ```text
-    submariner-catalog-config-4.19.yaml:
-    entries:
-    - defaultChannel: stable-0.20
-    ```
-
-    ```text
-    distgit/containers/submariner-operator-bundle/render_vars.in:
-    export BUNDLE_DEFAULT_CHANNEL="stable-${CI_X_VERSION}.${CI_Y_VERSION}"
-    export BUNDLE_CHANNELS="stable-${CI_X_VERSION}.${CI_Y_VERSION}"
-    ```
-
-  - However, the upstream bundle uses `alpha`.
-
-    ```text
-    bundle.Dockerfile.konflux:
-    LABEL operators.operatorframework.io.bundle.channel.default.v1=alpha-0.21
-    ```
-
-    ```text
-    bundle.Dockerfile:
-    LABEL operators.operatorframework.io.bundle.channels.v1=alpha-0.21
-    LABEL operators.operatorframework.io.bundle.channel.default.v1=alpha-0.21
-    ```
-
-  We need to determine which channel (`alpha` or `stable`) should be used consistently.
+- **Mirror File Size Limit:** The `.tekton/images-mirror-set.yaml` file is limited to 4096 bytes due to
+  Tekton task result constraints. To stay within this limit, **only one unreleased Y-stream** can exist
+  in the mirror file at a time. When adding a bundle from a new Y-stream (e.g., 0-23), the script
+  automatically REPLACES the previous Y-stream (e.g., 0-22) in the mirrors. Unreleased bundles from
+  the old Y-stream must be either released to registry.redhat.io, removed from the catalog, or rebuilt
+  with the new Y-stream. This is enforced by the `ensure_mirror_ystream()` function in
+  `scripts/update-bundle.sh`.
