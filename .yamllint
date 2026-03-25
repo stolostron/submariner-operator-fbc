@@ -1,0 +1,27 @@
+---
+# yamllint configuration for submariner-operator-fbc
+# Ignores generated files and relaxes rules for catalog templates
+
+extends: default
+
+# File patterns to ignore (generated content)
+ignore: |
+  catalog-4-*/
+  catalog-template-4-*.yaml
+  extracted-catalogs/
+  .tekton/submariner-fbc-*
+
+rules:
+  # Disable line-length (catalog templates have base64 icons and bundle SHAs)
+  line-length: disable
+
+  # Document start (---) is optional for catalog templates
+  document-start:
+    level: warning
+
+  # Comments can be indented differently
+  comments-indentation: disable
+
+  # Allow truthy values (on:, yes, no are common in GH Actions)
+  truthy:
+    allowed-values: ['true', 'false', 'on']

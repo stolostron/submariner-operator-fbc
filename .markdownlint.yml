@@ -1,5 +1,7 @@
 ---
-# Set maximum line Length to 140c to match Go linting
+# Set maximum line length to 140c to match Go linting
 line-length:
   line_length: 140
   code_blocks: false
+# Disable table column style enforcement (too strict)
+MD060: false

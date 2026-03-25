@@ -1,8 +1,11 @@
+---
 name: Validate Catalogs
-on:
+'on':
   push:
-    branches: [main]
+    branches:
+      - main
   pull_request:
+permissions: {}
 jobs:
   validate:
     runs-on: ubuntu-latest
@@ -12,7 +15,8 @@ jobs:
         run: |
           sudo apt-get update
           sudo apt-get install -y podman git wget jq
-          wget https://github.com/mikefarah/yq/releases/latest/download/yq_linux_amd64 -O /usr/local/bin/yq
-          chmod +x /usr/local/bin/yq
+          url=https://github.com/mikefarah/yq/releases/latest/download
+          sudo wget -qO /usr/bin/yq ${url}/yq_linux_amd64
+          sudo chmod +x /usr/bin/yq
       - name: Validate catalogs
-        run: make validate-catalog
+        run: make validate-catalogs
