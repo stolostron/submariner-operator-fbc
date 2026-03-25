@@ -7,17 +7,19 @@ if [[ $(basename "${PWD}") != "submariner-operator-fbc" ]]; then
   exit 1
 fi
 
-echo "This script generates a set of catalog templates, one for each supported OCP version."
-echo "The templates are generated from the base catalog-template.yaml file, and then pruned"
-echo "based on the versions defined in drop-versions.json."
+echo "This script generates OCP-version-specific catalog templates by filtering"
+echo "the base catalog-template.yaml to include only Submariner versions that support"
+echo "each OCP version (configured in drop-versions.json)."
 echo
 echo "Using drop version Submariner map:"
-echo "    (Keys are OCP versions, values are the minimum Submariner version to include for that OCP version.)"
 jq '.' drop-versions.json
 
 ocp_versions=$(jq -r 'keys[]' drop-versions.json)
 
-shouldPrune() {
+is_version_too_old() {
+  # Returns 0 (success) if version $2 is below minimum required for OCP $1 (should remove).
+  # Returns 1 (failure) if version $2 meets or exceeds minimum (should keep).
+  # Note: Return logic follows shell idiom (0=true/success, 1=false/failure).
   oldest_version="$(jq -r ".[\"${1}\"]" drop-versions.json).99"
 
   [[ "$(printf "%s\n%s\n" "${2}" "${oldest_version}" | sort --version-sort | tail -1)" == "${oldest_version}" ]]
@@ -37,19 +39,19 @@ for ocp_version in ${ocp_versions}; do
 
   # Prune channels
   for channel in $(yq -r '.entries[] | select(.schema == "olm.channel").name' "catalog-template-${ocp_version//./-}.yaml"); do
-    if shouldPrune "${ocp_version}" "${channel#*\-}"; then
+    if is_version_too_old "${ocp_version}" "${channel#*\-}"; then
       echo "  - Pruning channel: ${channel}"
-      yq -i '.entries |= del(.[] | select(.schema == "olm.channel" and .name == "'"${channel}"'"))' "catalog-template-${ocp_version//./-}.yaml"
+      CHANNEL="$channel" yq -i '.entries |= del(.[] | select(.schema == "olm.channel" and .name == env(CHANNEL)))' "catalog-template-${ocp_version//./-}.yaml"
     fi
   done
 
   # Prune bundles from channels
   for channel in $(yq -r '.entries[] | select(.schema == "olm.channel").name' "catalog-template-${ocp_version//./-}.yaml"); do
-    for entry in $(yq -r '.entries[] | select(.schema == "olm.channel" and .name == "'"${channel}"'").entries[].name' "catalog-template-${ocp_version//./-}.yaml"); do
+    for entry in $(CHANNEL="$channel" yq -r '.entries[] | select(.schema == "olm.channel" and .name == env(CHANNEL)).entries[].name' "catalog-template-${ocp_version//./-}.yaml"); do
       version=${entry#*\.v}
-      if shouldPrune "${ocp_version}" "${version}"; then
+      if is_version_too_old "${ocp_version}" "${version}"; then
         echo "  - Pruning entry from channel ${channel}: ${entry}"
-        yq -i '.entries[] |= (select(.schema == "olm.channel" and .name == "'"${channel}"'").entries |= del(.[] | select(.name == "'"${entry}"'")))' "catalog-template-${ocp_version//./-}.yaml"
+        CHANNEL="$channel" ENTRY="$entry" yq -i '.entries[] |= (select(.schema == "olm.channel" and .name == env(CHANNEL)).entries |= del(.[] | select(.name == env(ENTRY))))' "catalog-template-${ocp_version//./-}.yaml"
       fi
     done
   done
@@ -59,19 +61,19 @@ for ocp_version in ${ocp_versions}; do
 
   # Prune unreferenced bundles
   for bundle_image in $(yq -r '.entries[] | select(.schema == "olm.bundle").image' "catalog-template-${ocp_version//./-}.yaml"); do
-    bundle_name_in_template=$(yq -r '.entries[] | select(.schema == "olm.bundle" and .image == "'"${bundle_image}"'").name' "catalog-template-${ocp_version//./-}.yaml")
+    bundle_name_in_template=$(BUNDLE_IMAGE="$bundle_image" yq -r '.entries[] | select(.schema == "olm.bundle" and .image == env(BUNDLE_IMAGE)).name' "catalog-template-${ocp_version//./-}.yaml")
     if ! echo "${referenced_bundle_images}" | grep -q "${bundle_name_in_template}"; then
       echo "  - Pruning unreferenced bundle: ${bundle_name_in_template}"
-      yq -i '.entries |= del(.[] | select(.schema == "olm.bundle" and .image == "'"${bundle_image}"'"))' "catalog-template-${ocp_version//./-}.yaml"
+      BUNDLE_IMAGE="$bundle_image" yq -i '.entries |= del(.[] | select(.schema == "olm.bundle" and .image == env(BUNDLE_IMAGE)))' "catalog-template-${ocp_version//./-}.yaml"
     fi
   done
 
   # Handle replaces field
   for channel in $(yq -r '.entries[] | select(.schema == "olm.channel").name' "catalog-template-${ocp_version//./-}.yaml"); do
-    channel_entries=$(yq -r '.entries[] | select(.schema == "olm.channel" and .name == "'"${channel}"'").entries | length' "catalog-template-${ocp_version//./-}.yaml")
+    channel_entries=$(CHANNEL="$channel" yq -r '.entries[] | select(.schema == "olm.channel" and .name == env(CHANNEL)).entries | length' "catalog-template-${ocp_version//./-}.yaml")
     if [[ "${channel_entries}" == "1" ]]; then
       echo "  - Channel ${channel} has only one bundle, removing the 'replaces' field."
-      yq -i '.entries[] |= (select(.schema == "olm.channel" and .name == "'"${channel}"'").entries[0] |= del(.replaces))' "catalog-template-${ocp_version//./-}.yaml"
+      CHANNEL="$channel" yq -i '.entries[] |= (select(.schema == "olm.channel" and .name == env(CHANNEL)).entries[0] |= del(.replaces))' "catalog-template-${ocp_version//./-}.yaml"
     fi
   done
 done

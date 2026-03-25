@@ -1,7 +1,7 @@
 #!/bin/bash
 
-# Exit immediately if a command fails
-set -e
+# Exit immediately if a command fails, on undefined variables, and in pipelines
+set -euo pipefail
 
 if [[ "${SKIP_AUTH_TESTS:-false}" = "true" ]]; then
   echo "Skipping image-extract.sh as SKIP_AUTH_TESTS is set to true."
@@ -42,11 +42,11 @@ rm -rf "$OUTPUT_DIR"
 mkdir -p "$OUTPUT_DIR"
 
 echo "    Creating temporary container..."
+# Ensure the temporary container is removed when the script exits, even on error
+trap 'test -n "$CONTAINER_ID" && echo "    Cleaning up temporary container..." && podman rm "$CONTAINER_ID" >/dev/null' EXIT
+
 # Create a temporary container from the image. We just need its filesystem.
 CONTAINER_ID=$(podman create "$IMAGE_ID")
-
-# Ensure the temporary container is removed when the script exits, even on error
-trap 'echo "    Cleaning up temporary container..."; podman rm "$CONTAINER_ID" >/dev/null' EXIT
 
 echo "    Exporting and extracting filesystem to '$OUTPUT_DIR'..."
 # Export the container's filesystem as a tar stream and pipe it to tar to extract
