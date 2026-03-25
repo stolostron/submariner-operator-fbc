@@ -1,3 +1,4 @@
+---
 entries:
   - defaultChannel: stable-0.22
     icon:
@@ -150,7 +151,7 @@ entries:
     image: registry.redhat.io/rhacm2/submariner-operator-bundle@sha256:e533406d832461cd8889f5e95569ea9f8dbbd57b51dcd08b56050ba1e3775ad0
     schema: olm.bundle
   - name: submariner.v0.21.2
-    image: quay.io/redhat-user-workloads/submariner-tenant/submariner-bundle-0-21@sha256:bee92e4e7d305ab6f48d4a06fa7130f59ceebd004bbe802cd41a1eb4ffb98aee
+    image: registry.redhat.io/rhacm2/submariner-operator-bundle@sha256:bee92e4e7d305ab6f48d4a06fa7130f59ceebd004bbe802cd41a1eb4ffb98aee
     schema: olm.bundle
   - name: submariner.v0.22.0
     image: registry.redhat.io/rhacm2/submariner-operator-bundle@sha256:bb851aac8a0b44e3322da36c4349723e564ff8ce489210859210eddcb8f3c425
