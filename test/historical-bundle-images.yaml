@@ -1,7 +1,0 @@
-historical_bundle_images:
-  - image: "registry.redhat.io/rhacm2/submariner-operator-bundle@sha256:7a23eb13e0197b73cf2bb105a8ea038ae9c21904789c489ac56f54dea6b3ed95"
-    note: "v0.18.5-4"
-  - image: "registry.redhat.io/rhacm2/submariner-operator-bundle@sha256:e93f5f62c155f925288b579a7adfdd038ac358031a74173931116151abbef4ed"
-    note: "v0.17.6-2"
-  - image: "registry.redhat.io/rhacm2/submariner-operator-bundle@sha256:21a98e54b85f8a2b438d32587bbd20cf8d2174903ebe360bfa89c156658435fb"
-    note: "v0.16.8-1"

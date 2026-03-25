@@ -10,7 +10,7 @@ fi
 ./scripts/reset-test-environment.sh
 
 SCRIPT_DIR=$( cd -- "$( dirname -- "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )
-REPO_ROOT_DIR=$(realpath "${SCRIPT_DIR}/..")
+REPO_ROOT_DIR=$(realpath "${SCRIPT_DIR}/../..")
 
 # Run from the repo root
 cd "${REPO_ROOT_DIR}"
