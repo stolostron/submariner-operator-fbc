@@ -57,7 +57,7 @@ make update-bundle VERSION=0.23.0
 make update-bundle VERSION=0.20.3 REPLACE=0.20.2
 ```
 
-**What this does:** Automatically detects your scenario, updates the catalog template, rebuilds all OCP 4.14-4.21 catalogs, and creates a signed-off commit.
+**What this does:** Automatically detects your scenario (UPDATE existing SHA, ADD new version, or REPLACE broken version), updates the catalog template, rebuilds catalogs for OCP 4.14-4.21, and creates a signed-off commit.
 
 **After running:** Review with `git show`, validate with `make validate-catalogs`, then push and create a PR.
 
@@ -213,7 +213,7 @@ Error: Failed to access registry.redhat.io
 Error: x509: certificate signed by unknown authority
 ```
 
-Disconnect from Red Hat VPN. registry.redhat.io blocks corporate VPN.
+See [Prerequisites](#prerequisites) - ensure you're disconnected from Red Hat VPN.
 
 #### Authentication Failures
 
@@ -222,9 +222,9 @@ Error: No push-event snapshot found
 Error: Unauthorized: authentication required
 ```
 
-- Verify Konflux cluster login: `oc whoami --show-console`
-- Re-authenticate if session expired: `oc login --web https://api.kflux-prd-rh02.0fk9.p1.openshiftapps.com:6443/`
-- For registry.redhat.io: `podman login registry.redhat.io`
+Verify authentication (see [Prerequisites](#prerequisites) for setup):
+- Check cluster access: `oc whoami --show-console`
+- If expired, re-authenticate to Konflux and registry.redhat.io
 
 #### Bundle Version Mismatch
 
@@ -287,7 +287,7 @@ No action required - this is expected behavior.
 
 - `0.X.Y` (semver): Bundle names (e.g., `submariner.v0.22.1`)
 - `0-X-TIMESTAMP` (dashed): Snapshot names (e.g., `submariner-0-22-20260326-143000-000`)
-- `0-X` (Y-stream): Component names (e.g., `submariner-bundle-0-22`)
+- `0-X` (Y-stream): Minor version identifier used in component names (e.g., `submariner-bundle-0-22` for all 0.22.x releases)
 
 **Konflux & Registry:**
 
