@@ -159,7 +159,7 @@ Extract current production catalogs from Red Hat's operator index:
 make fetch-catalog OCP_VERSION=4.19 PACKAGE=submariner
 ```
 
-Output: `submariner-catalog-config-4.19.yaml` containing the production catalog.
+Output: `submariner-catalog-config-4.19.yaml`
 
 ## Testing
 
@@ -211,11 +211,7 @@ Error: skopeo inspect failed
 Error: oc command not found
 ```
 
-To skip authentication-required tests:
-
-```bash
-SKIP_AUTH_TESTS=true make test
-```
+Skip authentication-required tests: `SKIP_AUTH_TESTS=true make test`
 
 #### Catalog Build Errors
 
