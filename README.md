@@ -50,11 +50,11 @@ Add or update Submariner operator bundles:
 # Update existing version with new SHA (most common)
 make update-bundle VERSION=0.21.2
 
-# Add first release of new minor version (Y-stream: 0.23)
-make update-bundle VERSION=0.23.0
+# Add next patch version in current Y-stream
+make update-bundle VERSION=0.22.1
 
 # Skip broken version
-make update-bundle VERSION=0.20.3 REPLACE=0.20.2
+make update-bundle VERSION=0.22.2 REPLACE=0.22.1
 ```
 
 **What this does:** Automatically detects your scenario (UPDATE existing SHA, ADD new version, or REPLACE broken version), updates the catalog template, rebuilds catalogs for OCP 4.14-4.21, and creates a signed-off commit.
