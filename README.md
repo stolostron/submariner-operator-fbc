@@ -51,7 +51,7 @@ See [update-catalog.md](.agents/workflows/update-catalog.md) for details.
 **Choose based on your task:**
 
 1. **Adding or updating Submariner bundles** (most common)
-   → Use [update-catalog.md](.agents/workflows/update-catalog.md) - Add new versions or rebuild with new image SHAs
+   → Use [update-catalog.md](.agents/workflows/update-catalog.md) - Add new versions or update with new image SHAs
 
 2. **Converting staged URLs to production** (after prod release)
    → Use [update-prod-url.md](.agents/workflows/update-prod-url.md) - Update template from quay.io to registry.redhat.io
@@ -147,7 +147,7 @@ submariner-operator-fbc/
 The `make build-catalogs` command:
 
 1. Filters `catalog-template.yaml` per OCP version using `drop-versions.json`
-2. Renders templates with `opm` (4.17+ use `--migrate-level` flag), decomposes to file-based structure
+2. Renders templates with `opm`, decomposes to file-based structure
 3. Converts released bundle URLs from quay.io to registry.redhat.io
 4. Validates and formats YAML
 
@@ -165,7 +165,7 @@ Creates `submariner-catalog-config-4.19.yaml` with the production catalog from `
 
 ## Testing
 
-Three test levels with increasing integration scope:
+Test levels:
 
 - `make test` - Fast tests (~10s, runs in CI) - unit + integration tests
 - `make test-e2e` - End-to-end tests (~45s) - requires cluster access
