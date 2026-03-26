@@ -22,9 +22,7 @@ multi-version support.
 
 ## Prerequisites
 
-**⚠️ CRITICAL:** Disconnect from VPN - registry.redhat.io blocks Red Hat VPN
-
-See [workflow documentation](.agents/workflows/) for detailed prerequisites per scenario.
+See [workflow documentation](.agents/workflows/) for prerequisites per scenario.
 
 ## Which Workflow Do I Need?
 
