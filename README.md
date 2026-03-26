@@ -149,7 +149,9 @@ The `make build-catalogs` command:
 1. Filters `catalog-template.yaml` per OCP version using `drop-versions.json`
 2. Renders templates with `opm`, decomposes to file-based structure
 3. Converts released bundle URLs from quay.io to registry.redhat.io
-4. Validates and formats YAML
+4. Formats YAML files
+
+Run `make validate-catalogs` separately to validate.
 
 ## Extracting Production Catalogs
 
@@ -253,7 +255,7 @@ No action required - this is expected behavior.
 **Version Notation:**
 
 - `0.X.Y` (semver): Bundle names (e.g., `submariner.v0.22.1`)
-- `0-X-Y` (dashed): URLs and snapshots (e.g., `submariner-0-22-1`)
+- `0-X-TIMESTAMP` (dashed): Snapshot names (e.g., `submariner-0-22-20260326-143000-000`)
 - `0-X` (Y-stream): Component names (e.g., `submariner-bundle-0-22`)
 
 **Konflux & Registry:**
