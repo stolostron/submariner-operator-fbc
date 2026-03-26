@@ -43,8 +43,6 @@ make update-bundle VERSION=0.23.0
 make update-bundle VERSION=0.22.2 REPLACE=0.22.1
 ```
 
-**Prerequisites:** See [workflow documentation](.agents/workflows/) for prerequisites per scenario.
-
 **After:** Script creates signed commit. Review with `git show`, push, create PR.
 See [update-catalog.md](.agents/workflows/update-catalog.md) for details.
 
@@ -73,8 +71,8 @@ See [update-catalog.md](.agents/workflows/update-catalog.md) for details.
 
 | Target | Description | Usage |
 | --- | --- | --- |
-| `build-catalogs` | Builds File-Based Catalogs for all supported OCP versions (4-14 through 4-21) | `make build-catalogs` |
-| `validate-catalogs` | Validates FBC structure and bundle references | `make validate-catalogs` |
+| `build-catalogs` | Build File-Based Catalogs for all supported OCP versions (4-14 through 4-21) | `make build-catalogs` |
+| `validate-catalogs` | Validate FBC structure and bundle references | `make validate-catalogs` |
 | `fetch-catalog` | Extract production catalog for debugging/reference | `make fetch-catalog [OCP_VERSION=4.21] [PACKAGE=submariner]` |
 | `extract-image` | Extract container image filesystem for inspection | `make extract-image IMAGE=<image> [OUTPUT_DIR=<path>]` |
 
@@ -82,10 +80,10 @@ See [update-catalog.md](.agents/workflows/update-catalog.md) for details.
 
 | Target | Description | Usage |
 | --- | --- | --- |
-| `build-image` | Builds the OCI image for the generated catalog | `make build-image` |
-| `run-image` | Runs the catalog OCI image on port 50051 | `make run-image` |
-| `test-image` | Tests the running catalog image (availability and package list) | `make test-image` |
-| `stop-image` | Stops any running catalog OCI image instances | `make stop-image` |
+| `build-image` | Build the OCI image for the generated catalog | `make build-image` |
+| `run-image` | Run the catalog OCI image on port 50051 | `make run-image` |
+| `test-image` | Test the running catalog image | `make test-image` |
+| `stop-image` | Stop any running catalog OCI image instances | `make stop-image` |
 
 ### Test Targets
 
@@ -164,8 +162,6 @@ make fetch-catalog OCP_VERSION=4.19 PACKAGE=submariner
 ```
 
 Creates `submariner-catalog-config-4.19.yaml` with the production catalog from `registry.redhat.io`.
-
-**Requirements:** `podman login registry.redhat.io`, off VPN (Red Hat registry blocks VPN)
 
 ## Testing
 
