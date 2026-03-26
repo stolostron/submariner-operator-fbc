@@ -96,7 +96,7 @@ fetch-catalog:
 		echo "ERROR: OCP_VERSION required (e.g., OCP_VERSION=4.19)"; \
 		exit 1; \
 	fi
-	./scripts/fetch-catalog-containerized.sh "$(OCP_VERSION)" "$(PACKAGE)"
+	./scripts/fetch-catalog-containerized.sh "$(OCP_VERSION)" "${PACKAGE:-submariner}"
 
 # ============================================================================
 # Container Image Operations
