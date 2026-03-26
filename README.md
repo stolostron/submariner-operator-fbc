@@ -184,7 +184,7 @@ Error: Failed to access registry.redhat.io
 Error: x509: certificate signed by unknown authority
 ```
 
-**Solution:** Disconnect from Red Hat VPN. The registry.redhat.io service blocks corporate VPN connections.
+Disconnect from Red Hat VPN. The registry.redhat.io service may have connectivity issues when connected to corporate VPN.
 
 #### Authentication Failures
 
@@ -215,7 +215,7 @@ Error: skopeo inspect failed
 Error: oc command not found
 ```
 
-**Solution:** Skip authentication-required tests for local development:
+Skip authentication-required tests for local development:
 
 ```bash
 SKIP_AUTH_TESTS=true make test
