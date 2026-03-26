@@ -169,7 +169,7 @@ Creates `submariner-catalog-config-4.19.yaml` containing the production catalog.
 - `make test-e2e` - End-to-end tests (~45s, requires cluster)
 - `make validate-catalogs` - Catalog validation
 
-Skip cluster-dependent tests: `SKIP_AUTH_TESTS=true make test`
+To skip cluster-dependent tests: `SKIP_AUTH_TESTS=true make test`
 
 ## Troubleshooting
 
@@ -213,7 +213,7 @@ Error: skopeo inspect failed
 Error: oc command not found
 ```
 
-Skip authentication-required tests:
+To skip authentication-required tests:
 
 ```bash
 SKIP_AUTH_TESTS=true make test
