@@ -89,7 +89,7 @@ See [update-catalog.md](.agents/workflows/update-catalog.md) for details.
 
 | Target | Description | Usage |
 | --- | --- | --- |
-| `test` | Fast unit + integration tests (~10s) - runs in CI | `make test` |
+| `test` | Fast unit + integration tests (~15s) - runs in CI | `make test` |
 | `test-e2e` | End-to-end tests (~45s) - requires cluster access | `make test-e2e` |
 
 ### Linting
@@ -167,7 +167,7 @@ Creates `submariner-catalog-config-4.19.yaml` with the production catalog from `
 
 Test levels:
 
-- `make test` - Fast tests (~10s, runs in CI) - unit + integration tests
+- `make test` - Fast tests (~15s, runs in CI) - unit + integration tests
 - `make test-e2e` - End-to-end tests (~45s) - requires cluster access
 - `make validate-catalogs` - Validates catalog structure
 
