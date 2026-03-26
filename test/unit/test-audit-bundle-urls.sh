@@ -39,7 +39,7 @@ entries:
 test_single_released_bundle() {
   setup_inline_catalog "schema: olm.template.basic
 entries:
-  - name: submariner.v0.22.1
+  - name: ${TEST_BUNDLE_NAME_22_1}
     image: ${TEST_BUNDLE_QUAY_22_ABC123}
     schema: olm.bundle"
 
@@ -51,7 +51,7 @@ entries:
 
   assert_array_length "CONVERTIBLE_BUNDLES" "1" "One convertible bundle found"
   assert_array_length "UNRELEASED_BUNDLES" "0" "No unreleased bundles"
-  assert_equals "submariner.v0.22.1" "${CONVERTIBLE_BUNDLES[0]}" "Correct bundle name in CONVERTIBLE array"
+  assert_equals "${TEST_BUNDLE_NAME_22_1}" "${CONVERTIBLE_BUNDLES[0]}" "Correct bundle name in CONVERTIBLE array"
 
   cleanup_inline_catalog
 }
@@ -59,7 +59,7 @@ entries:
 test_single_unreleased_bundle() {
   setup_inline_catalog "schema: olm.template.basic
 entries:
-  - name: submariner.v0.23.1
+  - name: ${TEST_BUNDLE_NAME_23_1}
     image: ${TEST_BUNDLE_QUAY_23_DEF456}
     schema: olm.bundle"
 
@@ -71,7 +71,7 @@ entries:
 
   assert_array_length "CONVERTIBLE_BUNDLES" "0" "No convertible bundles"
   assert_array_length "UNRELEASED_BUNDLES" "1" "One unreleased bundle found"
-  assert_equals "submariner.v0.23.1" "${UNRELEASED_BUNDLES[0]}" "Correct bundle name in UNRELEASED array"
+  assert_equals "${TEST_BUNDLE_NAME_23_1}" "${UNRELEASED_BUNDLES[0]}" "Correct bundle name in UNRELEASED array"
 
   cleanup_inline_catalog
 }
@@ -101,10 +101,10 @@ entries:
   - name: submariner.v0.21.0
     image: ${TEST_BUNDLE_REGISTRY_REAL}
     schema: olm.bundle
-  - name: submariner.v0.22.1
+  - name: ${TEST_BUNDLE_NAME_22_1}
     image: ${TEST_BUNDLE_QUAY_22_ABC123}
     schema: olm.bundle
-  - name: submariner.v0.23.1
+  - name: ${TEST_BUNDLE_NAME_23_1}
     image: ${TEST_BUNDLE_QUAY_23_DEF456}
     schema: olm.bundle"
 
@@ -126,8 +126,8 @@ EOF
 
   assert_array_length "CONVERTIBLE_BUNDLES" "1" "One convertible bundle (v0.22.1)"
   assert_array_length "UNRELEASED_BUNDLES" "1" "One unreleased bundle (v0.23.1)"
-  assert_equals "submariner.v0.22.1" "${CONVERTIBLE_BUNDLES[0]}" "v0.22.1 is convertible"
-  assert_equals "submariner.v0.23.1" "${UNRELEASED_BUNDLES[0]}" "v0.23.1 is unreleased"
+  assert_equals "${TEST_BUNDLE_NAME_22_1}" "${CONVERTIBLE_BUNDLES[0]}" "v0.22.1 is convertible"
+  assert_equals "${TEST_BUNDLE_NAME_23_1}" "${UNRELEASED_BUNDLES[0]}" "v0.23.1 is unreleased"
 
   cleanup_inline_catalog
 }
@@ -138,7 +138,7 @@ entries:
   - name: submariner.v0.21.2
     image: ${TEST_BUNDLE_QUAY_21_ABC123}
     schema: olm.bundle
-  - name: submariner.v0.22.1
+  - name: ${TEST_BUNDLE_NAME_22_1}
     image: ${TEST_BUNDLE_QUAY_22_DEF456}
     schema: olm.bundle"
 
