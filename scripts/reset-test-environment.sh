@@ -46,7 +46,6 @@ git restore --source="$RESTORE_FROM" catalog-template.yaml \
     catalog-4-18 \
     catalog-4-19 \
     catalog-4-20 \
-    catalog-4-21 \
-    extracted-catalogs
+    catalog-4-21
 
 echo "  - Reset complete."
