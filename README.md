@@ -193,8 +193,6 @@ Error: No push-event snapshot found
 Error: Unauthorized: authentication required
 ```
 
-**Solutions:**
-
 - Verify Konflux cluster login: `oc whoami --show-console`
 - Re-authenticate if session expired: `oc login --web https://api.kflux-prd-rh02.0fk9.p1.openshiftapps.com:6443/`
 - For registry.redhat.io: `podman login registry.redhat.io`
@@ -205,8 +203,6 @@ Error: Unauthorized: authentication required
 Error: opm validate fails
 Error: Bundle submariner.vX.Y.Z not found in channel
 ```
-
-**Solutions:**
 
 - Verify version format: `0.22.1` (not `v0.22.1`)
 - Check bundle exists in snapshot: `oc get snapshot $SNAPSHOT -n submariner-tenant -o yaml`
@@ -231,8 +227,6 @@ SKIP_AUTH_TESTS=true make test
 Error: SHA mismatch between template and catalogs
 Error: Catalog-4-XX validation failed
 ```
-
-**Solutions:**
 
 - Verify no manual edits to `catalog-4-*/` directories (these are auto-generated)
 - Re-run build process: `make build-catalogs`
