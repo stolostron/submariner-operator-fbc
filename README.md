@@ -43,7 +43,7 @@ make update-bundle VERSION=0.23.0
 make update-bundle VERSION=0.22.2 REPLACE=0.22.1
 ```
 
-The script creates a signed commit - review with `git show`, push, create PR.
+The script creates a signed commit. Review with `git show`, then push and create PR.
 See [update-catalog.md](.agents/workflows/update-catalog.md) for details.
 
 ## Which Workflow Do I Need?
@@ -161,7 +161,7 @@ Extract current production catalogs from Red Hat's operator index:
 make fetch-catalog OCP_VERSION=4.19 PACKAGE=submariner
 ```
 
-Creates `submariner-catalog-config-4.19.yaml` with the production catalog.
+Creates `submariner-catalog-config-4.19.yaml` containing the production catalog.
 
 ## Testing
 
@@ -182,7 +182,7 @@ Error: Failed to access registry.redhat.io
 Error: x509: certificate signed by unknown authority
 ```
 
-Disconnect from Red Hat VPN. The registry.redhat.io service may have connectivity issues with corporate VPN.
+Disconnect from Red Hat VPN. The registry.redhat.io service may have connectivity issues when using corporate VPN.
 
 #### Authentication Failures
 
