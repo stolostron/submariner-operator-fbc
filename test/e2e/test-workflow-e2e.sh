@@ -22,6 +22,7 @@ SCRIPT_DIR=$( cd -- "$( dirname -- "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )
 REPO_ROOT_DIR=$(realpath "${SCRIPT_DIR}/../..")
 
 source "${REPO_ROOT_DIR}/scripts/lib/test-helpers.sh"
+source "${REPO_ROOT_DIR}/test/lib/test-constants.sh"
 
 cd "${REPO_ROOT_DIR}"
 
@@ -93,8 +94,8 @@ echo "=== Test Scenario: UPDATE workflow with real data ==="
 echo ""
 
 # Find a real snapshot for testing (use v0.22.1 as example)
-TEST_VERSION="0.22.1"
-Y_STREAM="0-22"
+TEST_VERSION="$TEST_VERSION_22_1"
+Y_STREAM="$TEST_Y_STREAM_22"
 
 echo "Finding latest snapshot for version ${TEST_VERSION}..."
 SNAPSHOT=$(oc get snapshots -n submariner-tenant \
