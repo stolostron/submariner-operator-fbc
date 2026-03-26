@@ -34,13 +34,13 @@ multi-version support.
 
 ```bash
 # Update existing version with new SHA (most common)
-make update-bundle VERSION=0.22.0
+make update-bundle VERSION=0.21.2
 
 # Add first release of new Y-stream
 make update-bundle VERSION=0.23.0
 
 # Skip broken version
-make update-bundle VERSION=0.22.2 REPLACE=0.22.1
+make update-bundle VERSION=0.20.3 REPLACE=0.20.2
 ```
 
 This creates a signed-off commit - review with `git show`, then push and create a PR.
@@ -54,7 +54,11 @@ See [update-catalog.md](.agents/workflows/update-catalog.md) for details.
    Use [update-catalog.md](.agents/workflows/update-catalog.md)
    Automatically handles URL conversion from staging to production.
 
-2. **Adding support for new OCP version** (when Red Hat releases new OpenShift)
+2. **Syncing production URLs manually** (edge cases only, usually automatic)
+   Use [update-prod-url.md](.agents/workflows/update-prod-url.md)
+   Manual workflow for batch URL conversions. Deprecated - use workflow #1 for normal cases.
+
+3. **Adding support for new OCP version** (when Red Hat releases new OpenShift)
    Use [add-ocp-version.md](.agents/workflows/add-ocp-version.md)
 
 ## Makefile Targets
@@ -119,17 +123,25 @@ See [update-catalog.md](.agents/workflows/update-catalog.md) for details.
 submariner-operator-fbc/
 ├── catalog-template.yaml       # Source template (edit this)
 ├── catalog-4-14/ ... 4-21/     # Generated (do not edit)
+├── drop-versions.json          # OCP version filtering config
+├── catalog.Dockerfile          # OCI catalog image build
+├── Makefile                    # Build automation
+├── bin/                        # Downloaded tools (opm, grpcurl)
 ├── scripts/
 │   ├── update-bundle.sh        # Bundle automation
 │   ├── generate-catalog-template.sh
 │   ├── render-catalog.sh
 │   ├── format-yaml.sh
+│   ├── fetch-catalog-containerized.sh
+│   ├── image-extract.sh
+│   ├── reset-test-environment.sh
 │   └── lib/
 │       ├── catalog-functions.sh   # FBC functions
 │       └── test-helpers.sh        # Test helpers
 ├── build/
 │   └── build.sh                # Catalog generation
 ├── .agents/workflows/          # Workflow documentation
+├── .tekton/                    # CI/CD pipeline definitions
 └── test/
     ├── unit/                   # Unit tests
     ├── integration/            # Integration tests
@@ -144,12 +156,18 @@ submariner-operator-fbc/
 
 The `make build-catalogs` command:
 
-1. Filters `catalog-template.yaml` per OCP version using `drop-versions.json` (creates intermediate `catalog-template-4-*.yaml` files)
-2. Renders templates with `opm alpha render-template`, decomposes to file-based structure (`catalog-*/bundles/`, `catalog-*/channels/`, `catalog-*/package.yaml`)
-3. Sorts `catalog-template.yaml` entries (package first, then channels alphabetically, then bundles alphabetically)
-4. Converts bundle URLs in generated catalogs from quay.io to registry.redhat.io
-5. Formats YAML files
-6. Cleans up intermediate template files
+1. **Filters** `catalog-template.yaml` per OCP version using `drop-versions.json` with exclusive semantics (>)
+   - Creates intermediate `catalog-template-4-*.yaml` files
+   - Example: OCP 4.19 with minimum "0.19" includes only versions > 0.19 (i.e., 0.20+), excludes 0.19 itself
+2. **Renders** templates with `opm alpha render-template`, decomposes to file-based structure
+   - OCP ≤ 4.16: Standard rendering
+   - OCP ≥ 4.17: Adds `--migrate-level=bundle-object-to-csv-metadata` for compatibility
+   - Uses local opm (with auth) for registry.redhat.io bundles, podman for quay.io
+   - Decomposes to `catalog-*/bundles/`, `catalog-*/channels/`, `catalog-*/package.yaml` using csplit
+3. **Sorts** `catalog-template.yaml` entries (package first, then channels alphabetically, then bundles alphabetically)
+4. **Converts** bundle URLs in generated catalogs from quay.io to registry.redhat.io
+5. **Formats** YAML files
+6. **Cleans up** intermediate template files
 
 Run `make validate-catalogs` separately to validate.
 

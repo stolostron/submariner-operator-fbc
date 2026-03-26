@@ -11,13 +11,17 @@
 - Repo root: `cd ~/konflux/submariner-operator-fbc`
 - GitHub repository write permissions (for creating PRs)
 - Release completed in submariner-release-management
+- Registry authentication: `podman login registry.redhat.io` (requires Red Hat subscription)
 
 **Required Tools:**
 
 - `oc` (OpenShift CLI)
 - `gh` (GitHub CLI, authenticated: `gh auth login`)
+- `podman` (Container runtime, for catalog rendering)
+- `skopeo` (Container inspection, for bundle release verification)
 - `make`, `curl`, `jq`, `yq`, `grep`, `awk`, `sed`
 - `git` (for version control)
+- `csplit`, `timeout` (typically pre-installed on Linux)
 
 ## Automated Workflow (Recommended)
 

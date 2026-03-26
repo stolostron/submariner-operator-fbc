@@ -7,13 +7,13 @@ Integration tests verify complete workflow scenarios with strategic mocking of e
 - **Fast:** ~4-5 seconds total execution
 - **Realistic:** Tests full `update-bundle.sh` workflow
 - **Strategic Mocking:** Mock external APIs (oc, skopeo, network) but use real catalogs
-- **Coverage:** 14 assertions across 3 workflow scenarios
+- **Coverage:** 13 assertions across 3 workflow scenarios
 
 ## Test Files
 
 | File                     | Assertions | Scenario                                                       |
 | ------------------------ | ---------- | -------------------------------------------------------------- |
-| test-workflow-add.sh     | 7          | Adding first bundle of new Y-stream (e.g., v0.24.0)           |
+| test-workflow-add.sh     | 6          | Adding first bundle of new Y-stream (e.g., v0.24.0)           |
 | test-workflow-replace.sh | 4          | Skipping broken version (e.g., v0.23.2 replacing v0.23.1)     |
 | test-workflow-update.sh  | 3          | Rebuilding existing bundle with new SHA                        |
 
