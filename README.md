@@ -139,8 +139,6 @@ Three test levels with increasing integration scope:
 
 **Local Development:** Use `SKIP_AUTH_TESTS=true make test` to skip cluster-dependent tests.
 
-See `test/README.md` for detailed test architecture and organization.
-
 ## Makefile Targets
 
 ### Main Workflow
