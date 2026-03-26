@@ -98,6 +98,18 @@ The `make build-catalogs` command:
 
 See `build/build.sh` for implementation.
 
+## Extracting Production Catalogs
+
+Extract current production catalogs from Red Hat's operator index for debugging or reference:
+
+```bash
+make fetch-catalog OCP_VERSION=4.19 PACKAGE=submariner
+```
+
+Creates `submariner-catalog-config-4.19.yaml` with the production catalog from `registry.redhat.io`.
+
+**Requirements:** `podman login registry.redhat.io`, off VPN (Red Hat registry blocks VPN)
+
 ## Testing
 
 Comprehensive test coverage organized into three levels:
