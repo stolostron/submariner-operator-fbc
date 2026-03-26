@@ -92,7 +92,7 @@ validate-catalogs: opm
 
 .PHONY: fetch-catalog
 fetch-catalog:
-	./scripts/fetch-catalog-containerized.sh "${OCP_VERSION:-4.21}" "${PACKAGE:-submariner}"
+	./scripts/fetch-catalog-containerized.sh "$${OCP_VERSION:-4.21}" "$${PACKAGE:-submariner}"
 
 # ============================================================================
 # Container Image Operations
