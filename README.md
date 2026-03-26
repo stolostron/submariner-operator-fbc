@@ -1,8 +1,8 @@
 # Submariner Operator FBC
 
-This repository manages File-Based Catalogs (FBC) for the Submariner operator across OpenShift Container Platform (OCP) versions 4.14 through 4.21 using automated GitOps workflows.
+This repository manages File-Based Catalogs (FBC) for the Submariner operator across OpenShift Container Platform (OCP) versions 4.14 through 4.21 using GitOps workflows.
 
-**What is FBC?** Modern declarative YAML format for distributing Kubernetes operators via OLM (Operator Lifecycle Manager). FBCs define operator bundles (versioned packages), channels (upgrade paths), and metadata as files. This enables GitOps workflows and multi-version support, unlike legacy index images.
+**What is FBC?** Modern declarative YAML format for distributing Kubernetes operators via OLM (Operator Lifecycle Manager). FBCs define operator bundles (versioned packages), channels (upgrade paths), and metadata as files, enabling GitOps workflows and multi-version support unlike legacy index images.
 
 ## Table of Contents
 
@@ -184,7 +184,7 @@ The `make build-catalogs` command:
 5. **Formats** YAML files
 6. **Cleans up** intermediate template files
 
-Run `make validate-catalogs` separately to validate.
+Validate with `make validate-catalogs`.
 
 ## Extracting Production Catalogs
 
@@ -198,7 +198,7 @@ Output: `submariner-catalog-config-4.19.yaml`
 
 ## Testing
 
-Run `make test` for fast unit and integration tests, or `make test-e2e` for full end-to-end validation requiring cluster access.
+Run `make test` for unit and integration tests, or `make test-e2e` for end-to-end validation (requires cluster access).
 
 **Tip:** Skip cluster-dependent tests with `SKIP_AUTH_TESTS=true make test`
 
