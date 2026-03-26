@@ -43,7 +43,7 @@ make update-bundle VERSION=0.23.0
 make update-bundle VERSION=0.22.2 REPLACE=0.22.1
 ```
 
-The script creates a signed commit. Review with `git show`, then push and create PR.
+Creates a signed commit. Review with `git show`, push, and create a PR.
 See [update-catalog.md](.agents/workflows/update-catalog.md) for details.
 
 ## Which Workflow Do I Need?
@@ -161,7 +161,7 @@ Extract current production catalogs from Red Hat's operator index:
 make fetch-catalog OCP_VERSION=4.19 PACKAGE=submariner
 ```
 
-Creates `submariner-catalog-config-4.19.yaml` containing the production catalog.
+Output: `submariner-catalog-config-4.19.yaml` containing the production catalog.
 
 ## Testing
 
