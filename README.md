@@ -167,7 +167,7 @@ Output: `submariner-catalog-config-4.19.yaml`
 - `make test-e2e` - End-to-end tests (~45s, requires cluster)
 - `make validate-catalogs` - Catalog validation
 
-To skip cluster-dependent tests: `SKIP_AUTH_TESTS=true make test`
+Skip cluster-dependent tests: `SKIP_AUTH_TESTS=true make test`
 
 ## Troubleshooting
 
