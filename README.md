@@ -169,14 +169,15 @@ submariner-operator-fbc/
 
 The `make build-catalogs` command:
 
-1. **Filters** `catalog-template.yaml` per OCP version using `drop-versions.json` (includes only bundles with versions greater than the minimum)
+1. **Filters** `catalog-template.yaml` per OCP version using `drop-versions.json`
+   - Includes only bundles with versions greater than the configured minimum
    - Creates intermediate `catalog-template-4-*.yaml` files
-   - Example: OCP 4.19 with minimum "0.19" includes only versions > 0.19
-2. **Renders** templates with `opm alpha render-template`, decomposes to file-based structure
+   - Example: OCP 4.19 with minimum "0.19" includes versions 0.20+
+2. **Renders** templates with `opm alpha render-template` and splits into individual files
    - OCP ≤ 4.16: Standard rendering
-   - OCP ≥ 4.17: Adds `--migrate-level=bundle-object-to-csv-metadata` for compatibility
-   - Uses local opm (with auth) for registry.redhat.io bundles, podman for quay.io
-   - Decomposes to `catalog-*/bundles/`, `catalog-*/channels/`, `catalog-*/package.yaml`
+   - OCP ≥ 4.17: Adds metadata migration flag for newer OCP compatibility
+   - Uses authenticated local opm for private registries, podman for public
+   - Splits output into `catalog-*/bundles/`, `catalog-*/channels/`, `catalog-*/package.yaml`
 3. **Sorts** `catalog-template.yaml` entries (package first, then channels and bundles alphabetically)
 4. **Converts** bundle URLs in generated catalogs from quay.io to registry.redhat.io
 5. **Formats** YAML files
@@ -279,7 +280,7 @@ No action required - this is expected behavior.
 - **OLM**: Manages operator installation, upgrades, and lifecycle
 - **Bundle**: Versioned operator package with manifests and metadata
 - **Channel**: Upgrade path for bundles (e.g., `stable-0.22`)
-- **skipRange**: OLM metadata controlling upgrade paths
+- **skipRange**: OLM metadata allowing direct upgrades (e.g., `>=0.21.0 <0.22.0` lets users skip patch versions)
 
 **Version Notation:**
 
