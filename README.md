@@ -43,7 +43,7 @@ make update-bundle VERSION=0.23.0
 make update-bundle VERSION=0.22.2 REPLACE=0.22.1
 ```
 
-This creates a signed commit - review with `git show`, then push and create a PR.
+This creates a signed-off commit - review with `git show`, then push and create a PR.
 See [update-catalog.md](.agents/workflows/update-catalog.md) for details.
 
 ## Which Workflow Do I Need?
@@ -52,11 +52,9 @@ See [update-catalog.md](.agents/workflows/update-catalog.md) for details.
 
 1. **Adding or updating Submariner bundles** (most common)
    Use [update-catalog.md](.agents/workflows/update-catalog.md)
+   Automatically handles URL conversion from staging to production.
 
-2. **Converting staged URLs to production** (after prod release)
-   Use [update-prod-url.md](.agents/workflows/update-prod-url.md)
-
-3. **Adding support for new OCP version** (when Red Hat releases new OpenShift)
+2. **Adding support for new OCP version** (when Red Hat releases new OpenShift)
    Use [add-ocp-version.md](.agents/workflows/add-ocp-version.md)
 
 ## Makefile Targets
@@ -81,7 +79,7 @@ See [update-catalog.md](.agents/workflows/update-catalog.md) for details.
 | Target | Description | Usage |
 | --- | --- | --- |
 | `build-image` | Build OCI catalog image | `make build-image` |
-| `run-image` | Run catalog image on port 50051 | `make run-image` |
+| `run-image` | Build and run catalog image on port 50051 | `make run-image` |
 | `test-image` | Test catalog image | `make test-image` |
 | `stop-image` | Stop catalog image | `make stop-image` |
 
@@ -100,7 +98,7 @@ See [update-catalog.md](.agents/workflows/update-catalog.md) for details.
 | `mdlint` | Lint Markdown files | `make mdlint` |
 | `yamllint` | Lint YAML files | `make yamllint` |
 | `lint` | Run all linting | `make lint` |
-| `ci` | Run catalog validation, linting, and tests | `make ci` |
+| `ci` | Run catalog validation, linting, and fast tests | `make ci` |
 
 ### Tool Installation
 
@@ -148,7 +146,7 @@ The `make build-catalogs` command:
 
 1. Filters `catalog-template.yaml` per OCP version using `drop-versions.json`
 2. Renders templates with `opm`, decomposes to file-based structure
-3. Converts released bundle URLs from quay.io to registry.redhat.io
+3. Converts bundle URLs from quay.io to registry.redhat.io
 4. Formats YAML files
 
 Run `make validate-catalogs` separately to validate.
@@ -237,8 +235,7 @@ unreleased Y-stream at a time. `make update-bundle` automatically handles this b
 - Removing unreleased bundles from other Y-streams with a warning
 
 ```text
-⚠ Removing unreleased bundle submariner.v0.23.0 from Y-stream 0-23
-  Reason: Mirror file size limit (4KB) allows only one unreleased Y-stream
+ℹ️  Removing unreleased bundle from Y-stream 0-23: submariner.v0.23.0
 ```
 
 No action required - this is expected behavior.
