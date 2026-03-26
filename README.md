@@ -144,10 +144,12 @@ submariner-operator-fbc/
 
 The `make build-catalogs` command:
 
-1. Filters `catalog-template.yaml` per OCP version using `drop-versions.json`
-2. Renders templates with `opm`, decomposes to file-based structure
-3. Converts bundle URLs from quay.io to registry.redhat.io
-4. Formats YAML files
+1. Filters `catalog-template.yaml` per OCP version using `drop-versions.json` (creates intermediate `catalog-template-4-*.yaml` files)
+2. Renders templates with `opm alpha render-template`, decomposes to file-based structure (`catalog-*/bundles/`, `catalog-*/channels/`, `catalog-*/package.yaml`)
+3. Sorts `catalog-template.yaml` entries (package first, then channels alphabetically, then bundles alphabetically)
+4. Converts bundle URLs in generated catalogs from quay.io to registry.redhat.io
+5. Formats YAML files
+6. Cleans up intermediate template files
 
 Run `make validate-catalogs` separately to validate.
 

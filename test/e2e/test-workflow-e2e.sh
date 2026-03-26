@@ -13,7 +13,7 @@
 # - Network access (no RH VPN)
 # - Registry authentication
 #
-# Execution time: ~5-15 minutes
+# Execution time: ~45 seconds
 #
 
 set -euo pipefail
@@ -29,7 +29,7 @@ cd "${REPO_ROOT_DIR}"
 echo ""
 echo "=== End-to-End (E2E) Workflow Test ==="
 echo ""
-echo "This test uses REAL external dependencies and is SLOW (~5-15 min)."
+echo "This test uses REAL external dependencies (~45s typical)."
 echo ""
 
 # Save current commit to restore after test
@@ -137,7 +137,7 @@ echo ""
 echo "Running update-bundle.sh with REAL external dependencies..."
 echo "  - Real oc calls (Konflux cluster)"
 echo "  - Real skopeo calls (registry checks)"
-echo "  - Real make build-catalogs (2-5 min)"
+echo "  - Real make build-catalogs (~30s)"
 echo "  - Real opm validate (all supported OCP versions)"
 echo ""
 

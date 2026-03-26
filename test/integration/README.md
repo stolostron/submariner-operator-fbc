@@ -55,7 +55,7 @@ Tests rebuilding an existing bundle with new SHA:
 Run all integration tests:
 
 ```bash
-make test-scripts  # Runs unit + integration + legacy tests
+make test  # Runs unit + integration tests
 ```
 
 Run a specific integration test:

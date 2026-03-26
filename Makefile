@@ -41,7 +41,7 @@ help:
 	@echo "  test-image          Build, run, and test image"
 	@echo ""
 	@echo "Testing & linting:"
-	@echo "  test                Fast unit+integration tests (~10s)"
+	@echo "  test                Unit + integration tests (~15s)"
 	@echo "  test-e2e            E2E tests (~45s, requires cluster)"
 	@echo "  shellcheck          Lint shell scripts"
 	@echo "  mdlint              Lint markdown files"
