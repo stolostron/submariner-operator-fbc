@@ -2,7 +2,7 @@
 
 This repository manages File-Based Catalogs (FBC) for the Submariner operator across OpenShift Container Platform (OCP) versions 4.14 through 4.21 using automated GitOps workflows.
 
-**What is FBC?** Modern declarative YAML format for distributing Kubernetes operators via OLM. Unlike legacy index images, FBCs define operator bundles (versioned packages), channels (upgrade paths), and metadata as files, enabling GitOps workflows and multi-version support.
+**What is FBC?** Modern declarative YAML format for distributing Kubernetes operators via OLM. FBCs define operator bundles (versioned packages), channels (upgrade paths), and metadata as files. This enables GitOps workflows and multi-version support, unlike legacy index images.
 
 ## Table of Contents
 
@@ -75,7 +75,7 @@ See [update-catalog.md](.agents/workflows/update-catalog.md) for detailed workfl
 | --- | --- | --- |
 | `build-catalogs` | Build catalogs for all OCP versions (4-14 through 4-21) | `make build-catalogs` |
 | `validate-catalogs` | Validate catalog structure | `make validate-catalogs` |
-| `fetch-catalog` | Extract production catalog | `make fetch-catalog [OCP_VERSION=4.21] [PACKAGE=submariner]` |
+| `fetch-catalog` | Extract production catalog | `make fetch-catalog [OCP_VERSION=<version>] [PACKAGE=<name>]` |
 | `extract-image` | Extract container image filesystem | `make extract-image IMAGE=<image> [OUTPUT_DIR=<path>]` |
 
 ### Container Image Operations
@@ -87,7 +87,7 @@ See [update-catalog.md](.agents/workflows/update-catalog.md) for detailed workfl
 | `test-image` | Test catalog image | `make test-image` |
 | `stop-image` | Stop catalog image | `make stop-image` |
 
-### Test Targets
+### Testing
 
 | Target | Description | Usage |
 | --- | --- | --- |
@@ -156,7 +156,7 @@ submariner-operator-fbc/
 
 The `make build-catalogs` command:
 
-1. **Filters** `catalog-template.yaml` per OCP version using `drop-versions.json` with exclusive semantics (>)
+1. **Filters** `catalog-template.yaml` per OCP version using `drop-versions.json` (includes only bundles with versions greater than the minimum)
    - Creates intermediate `catalog-template-4-*.yaml` files
    - Example: OCP 4.19 with minimum "0.19" includes only versions > 0.19 (i.e., 0.20+), excludes 0.19 itself
 2. **Renders** templates with `opm alpha render-template`, decomposes to file-based structure
@@ -246,8 +246,9 @@ Error: Catalog-4-XX validation failed
 
 #### Mirror File Size Limit (4096 bytes)
 
-The `.tekton/images-mirror-set.yaml` file is limited to 4096 bytes (Tekton task result constraint), allowing only one
-unreleased Y-stream at a time. `make update-bundle` automatically handles this by:
+The `.tekton/images-mirror-set.yaml` file is limited to 4096 bytes (Tekton task result constraint). This limits the catalog to one unreleased Y-stream at a time.
+
+`make update-bundle` automatically handles this by:
 
 - Converting released bundles to registry.redhat.io (no mirrors needed)
 - Removing unreleased bundles from other Y-streams with a warning
