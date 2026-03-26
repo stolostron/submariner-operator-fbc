@@ -54,12 +54,11 @@ See [update-catalog.md](.agents/workflows/update-catalog.md) for detailed workfl
 
 1. **Adding or updating Submariner bundles** (most common)
    Use [update-catalog.md](.agents/workflows/update-catalog.md)
-   Automatically handles URL conversion from staging to production.
 
-2. **Adding support for new OCP version** (when Red Hat releases new OpenShift)
+2. **Adding support for new OCP version**
    Use [add-ocp-version.md](.agents/workflows/add-ocp-version.md)
 
-> **Note:** The [update-prod-url.md](.agents/workflows/update-prod-url.md) workflow for manual URL syncing is deprecated. The `update-bundle` script automatically handles production URL conversion in 99% of cases.
+> **Note:** The manual URL sync workflow ([update-prod-url.md](.agents/workflows/update-prod-url.md)) is deprecated. The `update-bundle` script handles this automatically.
 
 ## Makefile Targets
 
@@ -158,12 +157,12 @@ The `make build-catalogs` command:
 
 1. **Filters** `catalog-template.yaml` per OCP version using `drop-versions.json` (includes only bundles with versions greater than the minimum)
    - Creates intermediate `catalog-template-4-*.yaml` files
-   - Example: OCP 4.19 with minimum "0.19" includes only versions > 0.19 (i.e., 0.20+), excludes 0.19 itself
+   - Example: OCP 4.19 with minimum "0.19" includes only versions > 0.19 (i.e., 0.20+)
 2. **Renders** templates with `opm alpha render-template`, decomposes to file-based structure
    - OCP ≤ 4.16: Standard rendering
    - OCP ≥ 4.17: Adds `--migrate-level=bundle-object-to-csv-metadata` for compatibility
    - Uses local opm (with auth) for registry.redhat.io bundles, podman for quay.io
-   - Decomposes to `catalog-*/bundles/`, `catalog-*/channels/`, `catalog-*/package.yaml` using csplit
+   - Decomposes to `catalog-*/bundles/`, `catalog-*/channels/`, `catalog-*/package.yaml`
 3. **Sorts** `catalog-template.yaml` entries (package first, then channels alphabetically, then bundles alphabetically)
 4. **Converts** bundle URLs in generated catalogs from quay.io to registry.redhat.io
 5. **Formats** YAML files
@@ -183,7 +182,7 @@ Output: `submariner-catalog-config-4.19.yaml`
 
 ## Testing
 
-Run `make test` for fast unit and integration tests, or `make test-e2e` for full end-to-end validation requiring cluster access. See [Makefile Targets](#test-targets) for details.
+Run `make test` for fast unit and integration tests, or `make test-e2e` for full end-to-end validation requiring cluster access.
 
 **Tip:** Skip cluster-dependent tests with `SKIP_AUTH_TESTS=true make test`
 
@@ -198,7 +197,7 @@ Error: Failed to access registry.redhat.io
 Error: x509: certificate signed by unknown authority
 ```
 
-Disconnect from Red Hat VPN. The registry.redhat.io service may have connectivity issues with corporate VPN.
+Disconnect from Red Hat VPN. registry.redhat.io blocks corporate VPN.
 
 #### Authentication Failures
 
