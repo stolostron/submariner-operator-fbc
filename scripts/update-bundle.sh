@@ -195,17 +195,6 @@ add_bundle_to_channel() {
   fi
 }
 
-# Get bundle entry from channel
-# Parameters: $1 = channel name, $2 = bundle name
-# Returns: Channel entry YAML, or empty if not found
-get_channel_bundle_entry() {
-  local channel_name="$1" bundle_name="$2"
-  [ -z "$channel_name" ] && return 1
-  [ -z "$bundle_name" ] && return 1
-  [ -f "catalog-template.yaml" ] || return 1
-  CHANNEL_NAME="$channel_name" BUNDLE_NAME="$bundle_name" yq eval '.entries[] | select(.schema == "olm.channel" and .name == env(CHANNEL_NAME)) | .entries[] | select(.name == env(BUNDLE_NAME))' catalog-template.yaml
-}
-
 #------------------------------------------------------------------------------
 # remove_bundle - Remove bundle and channel entry atomically
 #------------------------------------------------------------------------------
