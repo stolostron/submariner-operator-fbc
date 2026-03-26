@@ -73,7 +73,7 @@ See [update-catalog.md](.agents/workflows/update-catalog.md) for details.
 | --- | --- | --- |
 | `build-catalogs` | Build File-Based Catalogs for all supported OCP versions (4-14 through 4-21) | `make build-catalogs` |
 | `validate-catalogs` | Validate FBC structure and bundle references | `make validate-catalogs` |
-| `fetch-catalog` | Extract production catalog for debugging/reference | `make fetch-catalog [OCP_VERSION=4.21] [PACKAGE=submariner]` |
+| `fetch-catalog` | Extract production catalog | `make fetch-catalog [OCP_VERSION=4.21] [PACKAGE=submariner]` |
 | `extract-image` | Extract container image filesystem for inspection | `make extract-image IMAGE=<image> [OUTPUT_DIR=<path>]` |
 
 ### Container Image Operations
@@ -89,7 +89,7 @@ See [update-catalog.md](.agents/workflows/update-catalog.md) for details.
 
 | Target | Description | Usage |
 | --- | --- | --- |
-| `test` | Fast unit + integration tests (~15s) - runs in CI | `make test` |
+| `test` | Unit + integration tests (~15s) - runs in CI | `make test` |
 | `test-e2e` | End-to-end tests (~45s) - requires cluster access | `make test-e2e` |
 
 ### Linting
