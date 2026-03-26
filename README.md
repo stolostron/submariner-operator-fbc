@@ -20,8 +20,6 @@ multi-version support.
 - [Troubleshooting](#troubleshooting)
 - [Glossary](#glossary)
 
----
-
 ## Prerequisites
 
 **Before running any commands, verify:**
@@ -45,8 +43,6 @@ multi-version support.
 - OCP version support: New OpenShift version officially released
 
 See [workflow documentation](.agents/workflows/) for detailed prerequisites per scenario.
-
----
 
 ## Which Workflow Do I Need?
 
@@ -151,8 +147,8 @@ Three test levels with increasing integration scope:
 
 | Target | Description | Usage |
 | --- | --- | --- |
-| `build-catalogs` | Builds File-Based Catalogs for all 8 supported OCP versions (4-14 through 4-21) | `make build-catalogs` |
-| `validate-catalogs` | Validates FBC structure and bundle references using `opm validate` | `make validate-catalogs` |
+| `build-catalogs` | Builds File-Based Catalogs for all supported OCP versions (4-14 through 4-21) | `make build-catalogs` |
+| `validate-catalogs` | Validates FBC structure and bundle references | `make validate-catalogs` |
 | `fetch-catalog` | Extract production catalog for debugging/reference | `make fetch-catalog [OCP_VERSION=4.21] [PACKAGE=submariner]` |
 | `extract-image` | Extract container image filesystem for inspection | `make extract-image IMAGE=<image> [OUTPUT_DIR=<path>]` |
 
@@ -161,7 +157,7 @@ Three test levels with increasing integration scope:
 | Target | Description | Usage |
 | --- | --- | --- |
 | `build-image` | Builds the OCI image for the generated catalog | `make build-image` |
-| `run-image` | Runs the catalog OCI image in the background on port 50051 | `make run-image` |
+| `run-image` | Runs the catalog OCI image on port 50051 | `make run-image` |
 | `test-image` | Tests the running catalog image (availability and package list) | `make test-image` |
 | `stop-image` | Stops any running catalog OCI image instances | `make stop-image` |
 
@@ -288,8 +284,6 @@ The `.tekton/images-mirror-set.yaml` file is limited to 4096 bytes due to Tekton
 3. Coordinate with team on Y-stream priorities
 
 This constraint is enforced by `ensure_mirror_ystream()` in `scripts/update-bundle.sh`.
-
----
 
 ## Glossary
 
