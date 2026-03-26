@@ -22,25 +22,7 @@ multi-version support.
 
 ## Prerequisites
 
-**Before running any commands, verify:**
-
-- [ ] **CRITICAL: Disconnect from VPN** - registry.redhat.io blocks Red Hat VPN
-- [ ] Konflux cluster access: `oc login --web https://api.kflux-prd-rh02.0fk9.p1.openshiftapps.com:6443/`
-- [ ] GitHub CLI authenticated: `gh auth status`
-- [ ] Repository cloned: `cd ~/konflux/submariner-operator-fbc`
-
-**Required Tools:**
-
-- `oc` (OpenShift CLI) - Konflux snapshot access
-- `gh` (GitHub CLI) - PR creation and management
-- `make`, `curl`, `jq`, `yq` - Automation dependencies
-- `git` - Version control (GPG signing recommended)
-
-**Workflow-Specific Prerequisites:**
-
-- Bundle updates: Release completed in submariner-release-management
-- Production URL updates: Prod release completed, bundle exists at registry.redhat.io
-- OCP version support: New OpenShift version officially released
+**⚠️ CRITICAL:** Disconnect from VPN - registry.redhat.io blocks Red Hat VPN
 
 See [workflow documentation](.agents/workflows/) for detailed prerequisites per scenario.
 
