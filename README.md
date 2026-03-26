@@ -43,7 +43,7 @@ make update-bundle VERSION=0.23.0
 make update-bundle VERSION=0.22.2 REPLACE=0.22.1
 ```
 
-Script creates signed commit. Review with `git show`, push, create PR.
+Script creates signed commit - review with `git show`, push, create PR.
 See [update-catalog.md](.agents/workflows/update-catalog.md) for details.
 
 ## Which Workflow Do I Need?
@@ -51,13 +51,13 @@ See [update-catalog.md](.agents/workflows/update-catalog.md) for details.
 **Choose based on your task:**
 
 1. **Adding or updating Submariner bundles** (most common)
-   → Use [update-catalog.md](.agents/workflows/update-catalog.md) - Add new versions or update with new image SHAs
+   Use [update-catalog.md](.agents/workflows/update-catalog.md) - Add new versions or update with new image SHAs
 
 2. **Converting staged URLs to production** (after prod release)
-   → Use [update-prod-url.md](.agents/workflows/update-prod-url.md) - Update template from quay.io to registry.redhat.io
+   Use [update-prod-url.md](.agents/workflows/update-prod-url.md) - Update template from quay.io to registry.redhat.io
 
 3. **Adding support for new OCP version** (when Red Hat releases new OpenShift)
-   → Use [add-ocp-version.md](.agents/workflows/add-ocp-version.md) - Configure catalog for new OCP version
+   Use [add-ocp-version.md](.agents/workflows/add-ocp-version.md) - Configure catalog for new OCP version
 
 ## Makefile Targets
 
