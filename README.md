@@ -107,7 +107,7 @@ See [update-catalog.md](.agents/workflows/update-catalog.md) for details.
 | Target | Description | Usage |
 | --- | --- | --- |
 | `opm` | Install `opm` (Operator Package Manager) v1.56.0 | `make opm` |
-| `grpcurl` | Install `grpcurl` v1.9.3 for testing | `make grpcurl` |
+| `grpcurl` | Install `grpcurl` v1.9.3 | `make grpcurl` |
 
 ### Utilities
 
@@ -127,19 +127,19 @@ submariner-operator-fbc/
 │   ├── render-catalog.sh
 │   ├── format-yaml.sh
 │   └── lib/
-│       ├── catalog-functions.sh   # Pure functions for FBC manipulation
-│       └── test-helpers.sh        # Test assertion helpers
+│       ├── catalog-functions.sh   # FBC manipulation functions
+│       └── test-helpers.sh        # Test helpers
 ├── build/
 │   └── build.sh                # Orchestrates catalog generation
 ├── .agents/workflows/          # Detailed workflow documentation
 └── test/
-    ├── unit/                   # Unit tests (pure function testing)
-    ├── integration/            # Integration tests (workflow scenarios)
-    ├── scripts/                # Build validation tests (catalog generation, template rendering)
-    ├── e2e/                    # End-to-end tests (real Konflux cluster, real registries)
-    ├── fixtures/               # Test data (catalog templates, snapshots)
-    ├── lib/                    # Shared test infrastructure (mock commands, test constants)
-    └── test.sh                 # Test orchestrator (runs all tests)
+    ├── unit/                   # Unit tests
+    ├── integration/            # Integration tests
+    ├── scripts/                # Build validation tests
+    ├── e2e/                    # End-to-end tests
+    ├── fixtures/               # Test data
+    ├── lib/                    # Shared test infrastructure
+    └── test.sh                 # Test orchestrator
 ```
 
 ## Catalog Generation
@@ -150,8 +150,6 @@ The `make build-catalogs` command:
 2. Renders templates with `opm`, decomposes to file-based structure
 3. Converts released bundle URLs from quay.io to registry.redhat.io
 4. Validates and formats YAML
-
-See `build/build.sh` for implementation.
 
 ## Extracting Production Catalogs
 
