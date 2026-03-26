@@ -36,8 +36,9 @@ This repository manages File-Based Catalogs (FBC) for the Submariner operator ac
 - Registry authentication: `podman login registry.redhat.io`
 
 **Required Tools:**
-- `oc`, `gh`, `make`, `podman`, `skopeo`
-- `curl`, `jq`, `yq`, `grep`, `awk`, `sed`
+- Core: `oc`, `gh`, `git`, `make`, `podman`, `skopeo`
+- Text processing: `curl`, `jq`, `yq`, `grep`, `awk`, `sed`
+- System utilities: `csplit`, `timeout`, `find`, `cat`, `tar`, `sort` (with --version-sort)
 
 See [workflow docs](.agents/workflows/) for detailed requirements per scenario.
 
@@ -170,9 +171,9 @@ submariner-operator-fbc/
 The `make build-catalogs` command:
 
 1. **Filters** `catalog-template.yaml` per OCP version using `drop-versions.json`
-   - Includes only bundles with versions greater than the configured minimum
+   - Excludes bundles with versions less than or equal to the configured minimum
    - Creates intermediate `catalog-template-4-*.yaml` files
-   - Example: OCP 4.19 with minimum "0.19" includes versions 0.20+
+   - Example: OCP 4.19 with minimum "0.19" excludes all 0.19.x versions, includes only 0.20+
 2. **Renders** templates with `opm alpha render-template` and splits into individual files
    - OCP ≤ 4.16: Standard rendering
    - OCP ≥ 4.17: Adds metadata migration flag for newer OCP compatibility
