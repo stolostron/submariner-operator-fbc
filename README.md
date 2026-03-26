@@ -226,7 +226,7 @@ Error: SHA mismatch between template and catalogs
 Error: Catalog-4-XX validation failed
 ```
 
-- Verify no manual edits to `catalog-4-*/` directories (these are auto-generated)
+- Verify no manual edits to `catalog-4-*/` directories
 - Re-run build process: `make build-catalogs`
 - Check template syntax: `yq eval catalog-template.yaml`
 
