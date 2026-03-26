@@ -213,7 +213,7 @@ Error: skopeo inspect failed
 Error: oc command not found
 ```
 
-Skip authentication-required tests for local development:
+Skip authentication-required tests:
 
 ```bash
 SKIP_AUTH_TESTS=true make test
