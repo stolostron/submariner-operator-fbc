@@ -43,7 +43,7 @@ make update-bundle VERSION=0.23.0
 make update-bundle VERSION=0.22.2 REPLACE=0.22.1
 ```
 
-Script creates signed commit - review with `git show`, push, create PR.
+The script creates a signed commit - review with `git show`, push, create PR.
 See [update-catalog.md](.agents/workflows/update-catalog.md) for details.
 
 ## Which Workflow Do I Need?
@@ -100,7 +100,7 @@ See [update-catalog.md](.agents/workflows/update-catalog.md) for details.
 | `mdlint` | Lint Markdown files | `make mdlint` |
 | `yamllint` | Lint YAML files | `make yamllint` |
 | `lint` | Run all linting | `make lint` |
-| `ci` | Run catalog validation, linting, and fast tests | `make ci` |
+| `ci` | Run catalog validation, linting, and tests | `make ci` |
 
 ### Tool Installation
 
