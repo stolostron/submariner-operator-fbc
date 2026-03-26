@@ -240,8 +240,6 @@ unreleased Y-stream at a time. The `make update-bundle` script automatically han
 - Converting released bundles to registry.redhat.io (no mirrors needed)
 - Removing unreleased bundles from other Y-streams with a warning
 
-Example warning:
-
 ```text
 ⚠ Removing unreleased bundle submariner.v0.23.0 from Y-stream 0-23
   Reason: Mirror file size limit (4KB) allows only one unreleased Y-stream
