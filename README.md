@@ -51,13 +51,13 @@ See [update-catalog.md](.agents/workflows/update-catalog.md) for details.
 **Choose based on your task:**
 
 1. **Adding or updating Submariner bundles** (most common)
-   Use [update-catalog.md](.agents/workflows/update-catalog.md) - Add new versions or update with new image SHAs
+   Use [update-catalog.md](.agents/workflows/update-catalog.md)
 
 2. **Converting staged URLs to production** (after prod release)
-   Use [update-prod-url.md](.agents/workflows/update-prod-url.md) - Update template from quay.io to registry.redhat.io
+   Use [update-prod-url.md](.agents/workflows/update-prod-url.md)
 
 3. **Adding support for new OCP version** (when Red Hat releases new OpenShift)
-   Use [add-ocp-version.md](.agents/workflows/add-ocp-version.md) - Configure catalog for new OCP version
+   Use [add-ocp-version.md](.agents/workflows/add-ocp-version.md)
 
 ## Makefile Targets
 
@@ -155,13 +155,13 @@ See `build/build.sh` for implementation.
 
 ## Extracting Production Catalogs
 
-Extract current production catalogs from Red Hat's operator index for debugging or reference:
+Extract current production catalogs from Red Hat's operator index:
 
 ```bash
 make fetch-catalog OCP_VERSION=4.19 PACKAGE=submariner
 ```
 
-Creates `submariner-catalog-config-4.19.yaml` with the production catalog from `registry.redhat.io`.
+Creates `submariner-catalog-config-4.19.yaml` with the production catalog.
 
 ## Testing
 
@@ -247,7 +247,7 @@ Example warning:
   Reason: Mirror file size limit (4KB) allows only one unreleased Y-stream
 ```
 
-No action required - this is expected behavior enforced by `ensure_mirror_ystream()` in `scripts/update-bundle.sh`.
+No action required - this is expected behavior.
 
 ## Glossary
 
