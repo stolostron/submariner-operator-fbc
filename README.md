@@ -72,7 +72,7 @@ See [update-catalog.md](.agents/workflows/update-catalog.md) for details.
 | Target | Description | Usage |
 | --- | --- | --- |
 | `build-catalogs` | Build catalogs for all OCP versions (4-14 through 4-21) | `make build-catalogs` |
-| `validate-catalogs` | Validate catalog structure and bundle references | `make validate-catalogs` |
+| `validate-catalogs` | Validate catalog structure | `make validate-catalogs` |
 | `fetch-catalog` | Extract production catalog | `make fetch-catalog [OCP_VERSION=4.21] [PACKAGE=submariner]` |
 | `extract-image` | Extract container image filesystem | `make extract-image IMAGE=<image> [OUTPUT_DIR=<path>]` |
 
@@ -229,7 +229,7 @@ Error: Catalog-4-XX validation failed
 #### Mirror File Size Limit (4096 bytes)
 
 The `.tekton/images-mirror-set.yaml` file is limited to 4096 bytes (Tekton task result constraint), allowing only one
-unreleased Y-stream at a time. The `make update-bundle` script automatically handles this by:
+unreleased Y-stream at a time. `make update-bundle` automatically handles this by:
 
 - Converting released bundles to registry.redhat.io (no mirrors needed)
 - Removing unreleased bundles from other Y-streams with a warning
