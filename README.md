@@ -261,7 +261,7 @@ Error: Catalog-4-XX validation failed
 
 #### Mirror File Size Limit (4096 bytes)
 
-The `.tekton/images-mirror-set.yaml` file is limited to 4096 bytes (Tekton task result constraint). This limits the catalog to one unreleased Y-stream at a time.
+The `.tekton/images-mirror-set.yaml` file is limited to 4096 bytes (Tekton task result constraint), restricting catalogs to one unreleased Y-stream at a time.
 
 `make update-bundle` automatically handles this by:
 
