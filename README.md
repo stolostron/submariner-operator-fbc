@@ -1,11 +1,8 @@
 # Submariner Operator FBC
 
-This repository manages File-Based Catalogs (FBC) for the Submariner operator across OCP versions 4-14 through 4-21
-using automated GitOps workflows.
+This repository manages File-Based Catalogs (FBC) for the Submariner operator across OpenShift Container Platform (OCP) versions 4.14 through 4.21 using automated GitOps workflows.
 
-**What is FBC?** Modern declarative YAML format for distributing Kubernetes operators via OLM. Unlike legacy index
-images, FBCs define operator bundles, channels, and upgrade paths as files, enabling GitOps workflows and
-multi-version support.
+**What is FBC?** Modern declarative YAML format for distributing Kubernetes operators via OLM. Unlike legacy index images, FBCs define operator bundles (versioned packages), channels (upgrade paths), and metadata as files, enabling GitOps workflows and multi-version support.
 
 ## Table of Contents
 
@@ -32,6 +29,8 @@ multi-version support.
 
 ## Quick Start
 
+Add or update Submariner operator bundles:
+
 ```bash
 # Update existing version with new SHA (most common)
 make update-bundle VERSION=0.21.2
@@ -43,8 +42,11 @@ make update-bundle VERSION=0.23.0
 make update-bundle VERSION=0.20.3 REPLACE=0.20.2
 ```
 
-This creates a signed-off commit - review with `git show`, then push and create a PR.
-See [update-catalog.md](.agents/workflows/update-catalog.md) for details.
+**What this does:** Automatically detects your scenario, updates the catalog template, rebuilds all OCP 4.14-4.21 catalogs, and creates a signed-off commit.
+
+**After running:** Review with `git show`, validate with `make validate-catalogs`, then push and create a PR.
+
+See [update-catalog.md](.agents/workflows/update-catalog.md) for detailed workflow documentation.
 
 ## Which Workflow Do I Need?
 
@@ -54,12 +56,10 @@ See [update-catalog.md](.agents/workflows/update-catalog.md) for details.
    Use [update-catalog.md](.agents/workflows/update-catalog.md)
    Automatically handles URL conversion from staging to production.
 
-2. **Syncing production URLs manually** (edge cases only, usually automatic)
-   Use [update-prod-url.md](.agents/workflows/update-prod-url.md)
-   Manual workflow for batch URL conversions. Deprecated - use workflow #1 for normal cases.
-
-3. **Adding support for new OCP version** (when Red Hat releases new OpenShift)
+2. **Adding support for new OCP version** (when Red Hat releases new OpenShift)
    Use [add-ocp-version.md](.agents/workflows/add-ocp-version.md)
+
+> **Note:** The [update-prod-url.md](.agents/workflows/update-prod-url.md) workflow for manual URL syncing is deprecated. The `update-bundle` script automatically handles production URL conversion in 99% of cases.
 
 ## Makefile Targets
 
@@ -183,11 +183,9 @@ Output: `submariner-catalog-config-4.19.yaml`
 
 ## Testing
 
-- `make test` - Unit + integration tests (~15s)
-- `make test-e2e` - End-to-end tests (~45s, requires cluster)
-- `make validate-catalogs` - Catalog validation
+Run `make test` for fast unit and integration tests, or `make test-e2e` for full end-to-end validation requiring cluster access. See [Makefile Targets](#test-targets) for details.
 
-Skip cluster-dependent tests: `SKIP_AUTH_TESTS=true make test`
+**Tip:** Skip cluster-dependent tests with `SKIP_AUTH_TESTS=true make test`
 
 ## Troubleshooting
 
