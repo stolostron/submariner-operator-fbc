@@ -22,6 +22,7 @@
 - `make`, `curl`, `jq`, `yq`, `grep`, `awk`, `sed`
 - `git` (for version control)
 - `csplit`, `timeout` (typically pre-installed on Linux)
+- Standard utilities: `find`, `cat`, `tar`, `sort` (with --version-sort), `tr`, `mkdir`, `chmod`, `mktemp` (pre-installed on Linux)
 
 ## Automated Workflow (Recommended)
 

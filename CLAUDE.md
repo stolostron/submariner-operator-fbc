@@ -8,7 +8,7 @@ The `@` references below are markdown includes that import full workflow documen
 **Choose based on your task:**
 
 - **Submariner bundle released?** → [Update FBC Catalog](.agents/workflows/update-catalog.md)
-- **Need to sync prod URLs?** → [Update Catalog Template to Production URL](.agents/workflows/update-prod-url.md)
+- **Need to sync prod URLs?** → [Update Catalog Template to Production URL](.agents/workflows/update-prod-url.md) (⚠️ Deprecated - automatic conversion via update-bundle handles 99% of cases)
 - **New OpenShift version?** → [Add Support for New OCP Version](.agents/workflows/add-ocp-version.md)
 
 ## Quick Reference
