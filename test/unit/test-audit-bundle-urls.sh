@@ -23,7 +23,7 @@ test_no_quay_bundles() {
   setup_inline_catalog "schema: olm.template.basic
 entries:
   - name: submariner.v0.21.0
-    image: registry.redhat.io/rhacm2/submariner-operator-bundle@sha256:${TEST_SHA_ABC123}
+    image: ${TEST_BUNDLE_REGISTRY_ABC123}
     schema: olm.bundle"
 
   reset_bundle_arrays
@@ -40,7 +40,7 @@ test_single_released_bundle() {
   setup_inline_catalog "schema: olm.template.basic
 entries:
   - name: submariner.v0.22.1
-    image: quay.io/redhat-user-workloads/submariner-tenant/submariner-bundle-0-22@sha256:${TEST_SHA_ABC123}
+    image: ${TEST_BUNDLE_QUAY_22_ABC123}
     schema: olm.bundle"
 
   create_skopeo_mock 0
@@ -60,7 +60,7 @@ test_single_unreleased_bundle() {
   setup_inline_catalog "schema: olm.template.basic
 entries:
   - name: submariner.v0.23.1
-    image: quay.io/redhat-user-workloads/submariner-tenant/submariner-bundle-0-23@sha256:${TEST_SHA_DEF456}
+    image: ${TEST_BUNDLE_QUAY_23_DEF456}
     schema: olm.bundle"
 
   create_skopeo_mock 1
@@ -99,13 +99,13 @@ test_mixed_bundle_status() {
   setup_inline_catalog "schema: olm.template.basic
 entries:
   - name: submariner.v0.21.0
-    image: registry.redhat.io/rhacm2/submariner-operator-bundle@sha256:${TEST_SHA_REAL}
+    image: ${TEST_BUNDLE_REGISTRY_REAL}
     schema: olm.bundle
   - name: submariner.v0.22.1
-    image: quay.io/redhat-user-workloads/submariner-tenant/submariner-bundle-0-22@sha256:${TEST_SHA_ABC123}
+    image: ${TEST_BUNDLE_QUAY_22_ABC123}
     schema: olm.bundle
   - name: submariner.v0.23.1
-    image: quay.io/redhat-user-workloads/submariner-tenant/submariner-bundle-0-23@sha256:${TEST_SHA_DEF456}
+    image: ${TEST_BUNDLE_QUAY_23_DEF456}
     schema: olm.bundle"
 
   # Create a smart mock that returns different exit codes based on SHA
@@ -136,10 +136,10 @@ test_multiple_released_bundles() {
   setup_inline_catalog "schema: olm.template.basic
 entries:
   - name: submariner.v0.21.2
-    image: quay.io/redhat-user-workloads/submariner-tenant/submariner-bundle-0-21@sha256:${TEST_SHA_ABC123}
+    image: ${TEST_BUNDLE_QUAY_21_ABC123}
     schema: olm.bundle
   - name: submariner.v0.22.1
-    image: quay.io/redhat-user-workloads/submariner-tenant/submariner-bundle-0-22@sha256:${TEST_SHA_DEF456}
+    image: ${TEST_BUNDLE_QUAY_22_DEF456}
     schema: olm.bundle"
 
   create_skopeo_mock 0
