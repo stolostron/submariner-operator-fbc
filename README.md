@@ -119,8 +119,8 @@ See [update-catalog.md](.agents/workflows/update-catalog.md) for details.
 
 ```text
 submariner-operator-fbc/
-├── catalog-template.yaml       # Source template (edit this, not catalog-4-*/)
-├── catalog-4-14/ ... 4-21/     # Generated catalogs (do not edit)
+├── catalog-template.yaml       # Source template (edit this)
+├── catalog-4-14/ ... 4-21/     # Generated (do not edit)
 ├── scripts/
 │   ├── update-bundle.sh        # Main automation for bundle updates
 │   ├── generate-catalog-template.sh
