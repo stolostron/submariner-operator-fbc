@@ -20,7 +20,7 @@ The `@` references below are markdown includes that import full workflow documen
 ```bash
 make update-bundle VERSION=0.22.1              # Most common: update with new SHA
 make build-catalogs validate-catalogs          # Build and validate all catalogs
-make test                                        # Run fast tests (~15s)
+make test                                        # Run tests (~90s)
 ```
 
 ## Constraints

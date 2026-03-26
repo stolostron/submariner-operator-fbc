@@ -53,4 +53,4 @@ make test-e2e
 
 **Snapshot not found**: Verify a recent Konflux build exists for the version being tested
 
-**Slow execution**: Test runs in ~45s. Use fast unit/integration tests (~15s) for quicker feedback.
+**Slow execution**: Test runs in ~45s. Use unit/integration tests (`make test`, ~90s) instead for offline testing.

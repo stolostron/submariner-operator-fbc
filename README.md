@@ -104,7 +104,7 @@ See [update-catalog.md](.agents/workflows/update-catalog.md) for detailed workfl
 
 | Target | Description | Usage |
 | --- | --- | --- |
-| `test` | Run unit + integration tests (~15s) | `make test` |
+| `test` | Run unit + integration tests (~90s) | `make test` |
 | `test-e2e` | Run end-to-end tests (~45s, requires cluster) | `make test-e2e` |
 
 ### Linting
