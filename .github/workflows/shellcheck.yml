@@ -8,6 +8,7 @@ name: Shellcheck
 permissions: {}
 jobs:
   shellcheck:
+    name: Shell Scripts
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4

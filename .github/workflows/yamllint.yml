@@ -8,6 +8,7 @@ name: YAML Lint
 permissions: {}
 jobs:
   yamllint:
+    name: YAML Files
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4

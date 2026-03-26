@@ -8,6 +8,7 @@ name: Test Image Build
 permissions: {}
 jobs:
   test-image:
+    name: Image Build & Test
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
