@@ -43,7 +43,7 @@ make update-bundle VERSION=0.23.0
 make update-bundle VERSION=0.22.2 REPLACE=0.22.1
 ```
 
-**After:** Script creates signed commit. Review with `git show`, push, create PR.
+Script creates signed commit. Review with `git show`, push, create PR.
 See [update-catalog.md](.agents/workflows/update-catalog.md) for details.
 
 ## Which Workflow Do I Need?
@@ -171,7 +171,7 @@ Test levels:
 - `make test-e2e` - End-to-end tests (~45s) - requires cluster access
 - `make validate-catalogs` - Validates catalog structure
 
-**Local Development:** Use `SKIP_AUTH_TESTS=true make test` to skip cluster-dependent tests.
+Use `SKIP_AUTH_TESTS=true make test` to skip cluster-dependent tests.
 
 ## Troubleshooting
 
