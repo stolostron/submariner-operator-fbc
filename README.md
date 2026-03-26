@@ -2,12 +2,13 @@
 
 This repository manages File-Based Catalogs (FBC) for the Submariner operator across OpenShift Container Platform (OCP) versions 4.14 through 4.21 using automated GitOps workflows.
 
-**What is FBC?** Modern declarative YAML format for distributing Kubernetes operators via OLM. FBCs define operator bundles (versioned packages), channels (upgrade paths), and metadata as files. This enables GitOps workflows and multi-version support, unlike legacy index images.
+**What is FBC?** Modern declarative YAML format for distributing Kubernetes operators via OLM (Operator Lifecycle Manager). FBCs define operator bundles (versioned packages), channels (upgrade paths), and metadata as files. This enables GitOps workflows and multi-version support, unlike legacy index images.
 
 ## Table of Contents
 
 **Getting Started:**
 
+- [Prerequisites](#prerequisites)
 - [Quick Start](#quick-start)
 - [Which Workflow Do I Need?](#which-workflow-do-i-need)
 
@@ -27,6 +28,19 @@ This repository manages File-Based Catalogs (FBC) for the Submariner operator ac
 - [Troubleshooting](#troubleshooting)
 - [Glossary](#glossary)
 
+## Prerequisites
+
+**Environment:**
+- Konflux cluster access: `oc login --web https://api.kflux-prd-rh02.0fk9.p1.openshiftapps.com:6443/`
+- Disconnect from Red Hat VPN (registry.redhat.io blocks corporate VPN)
+- Registry authentication: `podman login registry.redhat.io`
+
+**Required Tools:**
+- `oc`, `gh`, `make`, `podman`, `skopeo`
+- `curl`, `jq`, `yq`, `grep`, `awk`, `sed`
+
+See [workflow docs](.agents/workflows/) for detailed requirements per scenario.
+
 ## Quick Start
 
 Add or update Submariner operator bundles:
@@ -35,7 +49,7 @@ Add or update Submariner operator bundles:
 # Update existing version with new SHA (most common)
 make update-bundle VERSION=0.21.2
 
-# Add first release of new Y-stream
+# Add first release of new minor version (Y-stream: 0.23)
 make update-bundle VERSION=0.23.0
 
 # Skip broken version
@@ -66,7 +80,7 @@ See [update-catalog.md](.agents/workflows/update-catalog.md) for detailed workfl
 
 | Target | Description | Usage |
 | --- | --- | --- |
-| `update-bundle` | Add/update operator bundles with scenario detection | `make update-bundle VERSION=0.23.1` |
+| `update-bundle` | Add/update operator bundles with scenario detection | `make update-bundle VERSION=<version>` |
 
 ### Catalog Operations
 
@@ -90,8 +104,8 @@ See [update-catalog.md](.agents/workflows/update-catalog.md) for detailed workfl
 
 | Target | Description | Usage |
 | --- | --- | --- |
-| `test` | Unit + integration tests (~15s) - runs in CI | `make test` |
-| `test-e2e` | End-to-end tests (~45s) - requires cluster access | `make test-e2e` |
+| `test` | Run unit + integration tests (~15s) | `make test` |
+| `test-e2e` | Run end-to-end tests (~45s, requires cluster) | `make test-e2e` |
 
 ### Linting
 
