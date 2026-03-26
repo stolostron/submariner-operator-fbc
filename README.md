@@ -122,16 +122,16 @@ submariner-operator-fbc/
 ├── catalog-template.yaml       # Source template (edit this)
 ├── catalog-4-14/ ... 4-21/     # Generated (do not edit)
 ├── scripts/
-│   ├── update-bundle.sh        # Main automation for bundle updates
+│   ├── update-bundle.sh        # Bundle automation
 │   ├── generate-catalog-template.sh
 │   ├── render-catalog.sh
 │   ├── format-yaml.sh
 │   └── lib/
-│       ├── catalog-functions.sh   # FBC manipulation functions
+│       ├── catalog-functions.sh   # FBC functions
 │       └── test-helpers.sh        # Test helpers
 ├── build/
-│   └── build.sh                # Orchestrates catalog generation
-├── .agents/workflows/          # Detailed workflow documentation
+│   └── build.sh                # Catalog generation
+├── .agents/workflows/          # Workflow documentation
 └── test/
     ├── unit/                   # Unit tests
     ├── integration/            # Integration tests
