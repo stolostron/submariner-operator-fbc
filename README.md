@@ -74,16 +74,16 @@ See [update-catalog.md](.agents/workflows/update-catalog.md) for details.
 | `build-catalogs` | Build File-Based Catalogs for all supported OCP versions (4-14 through 4-21) | `make build-catalogs` |
 | `validate-catalogs` | Validate FBC structure and bundle references | `make validate-catalogs` |
 | `fetch-catalog` | Extract production catalog | `make fetch-catalog [OCP_VERSION=4.21] [PACKAGE=submariner]` |
-| `extract-image` | Extract container image filesystem for inspection | `make extract-image IMAGE=<image> [OUTPUT_DIR=<path>]` |
+| `extract-image` | Extract container image filesystem | `make extract-image IMAGE=<image> [OUTPUT_DIR=<path>]` |
 
 ### Container Image Operations
 
 | Target | Description | Usage |
 | --- | --- | --- |
-| `build-image` | Build the OCI image for the generated catalog | `make build-image` |
-| `run-image` | Run the catalog OCI image on port 50051 | `make run-image` |
-| `test-image` | Test the running catalog image | `make test-image` |
-| `stop-image` | Stop any running catalog OCI image instances | `make stop-image` |
+| `build-image` | Build OCI catalog image | `make build-image` |
+| `run-image` | Run catalog image on port 50051 | `make run-image` |
+| `test-image` | Test catalog image | `make test-image` |
+| `stop-image` | Stop catalog image | `make stop-image` |
 
 ### Test Targets
 
@@ -119,8 +119,8 @@ See [update-catalog.md](.agents/workflows/update-catalog.md) for details.
 
 ```text
 submariner-operator-fbc/
-├── catalog-template.yaml       # Source template for all catalogs (EDIT THIS, not generated catalogs)
-├── catalog-4-14/ ... 4-21/     # Generated catalogs (DO NOT EDIT - rebuilt from template)
+├── catalog-template.yaml       # Source template (edit this, not catalog-4-*/)
+├── catalog-4-14/ ... 4-21/     # Generated catalogs (do not edit)
 ├── scripts/
 │   ├── update-bundle.sh        # Main automation for bundle updates
 │   ├── generate-catalog-template.sh
