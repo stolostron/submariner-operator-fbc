@@ -74,7 +74,7 @@ make update-bundle VERSION=0.23.0
 make update-bundle VERSION=0.22.2 REPLACE=0.22.1
 ```
 
-**Prerequisites:** See [Prerequisites Checklist](#prerequisites) above.
+See [Prerequisites](#prerequisites) above.
 
 **After:** Script creates signed commit. Review with `git show`, push, create PR.
 See [update-catalog.md](.agents/workflows/update-catalog.md) for details.
@@ -112,7 +112,7 @@ The `make build-catalogs` command:
 
 1. Filters `catalog-template.yaml` per OCP version using `drop-versions.json`
 2. Renders templates with `opm` (4.17+ use `--migrate-level` flag), decomposes to file-based structure
-3. Converts quay.io URLs to registry.redhat.io
+3. Converts released bundle URLs from quay.io to registry.redhat.io
 4. Validates and formats YAML
 
 See `build/build.sh` for implementation.
@@ -145,7 +145,7 @@ Three test levels with increasing integration scope:
 
 | Target | Description | Usage |
 | --- | --- | --- |
-| `update-bundle` | Add/update operator bundles with scenario detection | `make update-bundle VERSION=0.23.1 [SNAPSHOT=...] [REPLACE=...]` |
+| `update-bundle` | Add/update operator bundles with scenario detection | `make update-bundle VERSION=0.23.1` |
 
 ### Catalog Operations
 
