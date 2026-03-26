@@ -22,7 +22,7 @@ reset_bundle_arrays
 test_no_quay_bundles() {
   setup_inline_catalog "schema: olm.template.basic
 entries:
-  - name: submariner.v0.21.0
+  - name: ${TEST_BUNDLE_NAME_21_0}
     image: ${TEST_BUNDLE_REGISTRY_ABC123}
     schema: olm.bundle"
 
@@ -98,7 +98,7 @@ entries:
 test_mixed_bundle_status() {
   setup_inline_catalog "schema: olm.template.basic
 entries:
-  - name: submariner.v0.21.0
+  - name: ${TEST_BUNDLE_NAME_21_0}
     image: ${TEST_BUNDLE_REGISTRY_REAL}
     schema: olm.bundle
   - name: ${TEST_BUNDLE_NAME_22_1}
@@ -135,7 +135,7 @@ EOF
 test_multiple_released_bundles() {
   setup_inline_catalog "schema: olm.template.basic
 entries:
-  - name: submariner.v0.21.2
+  - name: ${TEST_BUNDLE_NAME_21_2}
     image: ${TEST_BUNDLE_QUAY_21_ABC123}
     schema: olm.bundle
   - name: ${TEST_BUNDLE_NAME_22_1}

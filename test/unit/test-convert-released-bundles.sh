@@ -72,7 +72,7 @@ entries:
 test_multiple_bundle_conversion() {
   setup_inline_catalog "schema: olm.template.basic
 entries:
-  - name: submariner.v0.21.2
+  - name: ${TEST_BUNDLE_NAME_21_2}
     image: ${TEST_BUNDLE_QUAY_21_ABC123}
     schema: olm.bundle
   - name: ${TEST_BUNDLE_NAME_22_1}
