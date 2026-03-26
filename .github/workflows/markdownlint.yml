@@ -8,6 +8,7 @@ name: Markdown Lint
 permissions: {}
 jobs:
   markdownlint:
+    name: Documentation
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
