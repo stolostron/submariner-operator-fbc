@@ -165,11 +165,11 @@ Creates `submariner-catalog-config-4.19.yaml` with the production catalog from `
 
 ## Testing
 
-- `make test` - Fast unit + integration tests (~15s)
+- `make test` - Unit + integration tests (~15s)
 - `make test-e2e` - End-to-end tests (~45s, requires cluster)
-- `make validate-catalogs` - Catalog structure validation
+- `make validate-catalogs` - Catalog validation
 
-Use `SKIP_AUTH_TESTS=true make test` to skip cluster-dependent tests.
+Skip cluster-dependent tests: `SKIP_AUTH_TESTS=true make test`
 
 ## Troubleshooting
 
@@ -182,7 +182,7 @@ Error: Failed to access registry.redhat.io
 Error: x509: certificate signed by unknown authority
 ```
 
-Disconnect from Red Hat VPN. The registry.redhat.io service may have connectivity issues when connected to corporate VPN.
+Disconnect from Red Hat VPN. The registry.redhat.io service may have connectivity issues with corporate VPN.
 
 #### Authentication Failures
 
