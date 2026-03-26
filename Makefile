@@ -31,6 +31,7 @@ help:
 	@echo "Catalogs:"
 	@echo "  build-catalogs      Generate all OCP catalogs from template"
 	@echo "  validate-catalogs   Validate catalogs with opm"
+	@echo "  fetch-catalog       Extract production catalog (OCP_VERSION=X.Y [PACKAGE=submariner])"
 	@echo ""
 	@echo "Container images:"
 	@echo "  build-image         Build container image"
@@ -88,6 +89,14 @@ validate-catalogs: opm
 		echo "Validating $${catalog} ..."; \
 		$(OPM) validate $${catalog}; \
 	done
+
+.PHONY: fetch-catalog
+fetch-catalog:
+	@if [ -z "$(OCP_VERSION)" ]; then \
+		echo "ERROR: OCP_VERSION required (e.g., OCP_VERSION=4.19)"; \
+		exit 1; \
+	fi
+	./scripts/fetch-catalog-containerized.sh "$(OCP_VERSION)" "$(PACKAGE)"
 
 # ============================================================================
 # Container Image Operations
