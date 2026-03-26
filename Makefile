@@ -40,7 +40,7 @@ help:
 	@echo ""
 	@echo "Testing & linting:"
 	@echo "  test                Fast unit+integration tests (~10s)"
-	@echo "  test-e2e            E2E tests (~5-15min, requires cluster)"
+	@echo "  test-e2e            E2E tests (~45s, requires cluster)"
 	@echo "  shellcheck          Lint shell scripts"
 	@echo "  mdlint              Lint markdown files"
 	@echo "  yamllint            Lint YAML files"
