@@ -9,33 +9,26 @@ multi-version support.
 
 ## Table of Contents
 
-- [Prerequisites](#prerequisites)
-- [Which Workflow Do I Need?](#which-workflow-do-i-need)
+**Getting Started:**
+
 - [Quick Start](#quick-start)
+- [Which Workflow Do I Need?](#which-workflow-do-i-need)
+
+**Reference:**
+
+- [Makefile Targets](#makefile-targets)
+
+**Understanding the Repository:**
+
 - [Repository Structure](#repository-structure)
 - [Catalog Generation](#catalog-generation)
 - [Extracting Production Catalogs](#extracting-production-catalogs)
 - [Testing](#testing)
-- [Makefile Targets](#makefile-targets)
+
+**Help:**
+
 - [Troubleshooting](#troubleshooting)
 - [Glossary](#glossary)
-
-## Prerequisites
-
-See [workflow documentation](.agents/workflows/) for prerequisites per scenario.
-
-## Which Workflow Do I Need?
-
-**Choose based on your task:**
-
-1. **Adding or updating Submariner bundles** (most common)
-   → Use [update-catalog.md](.agents/workflows/update-catalog.md) - Add new versions or rebuild with new image SHAs
-
-2. **Converting staged URLs to production** (after prod release)
-   → Use [update-prod-url.md](.agents/workflows/update-prod-url.md) - Update template from quay.io to registry.redhat.io
-
-3. **Adding support for new OCP version** (when Red Hat releases new OpenShift)
-   → Use [add-ocp-version.md](.agents/workflows/add-ocp-version.md) - Configure catalog for new OCP version
 
 ## Quick Start
 
@@ -50,10 +43,79 @@ make update-bundle VERSION=0.23.0
 make update-bundle VERSION=0.22.2 REPLACE=0.22.1
 ```
 
-See [Prerequisites](#prerequisites) above.
+**Prerequisites:** See [workflow documentation](.agents/workflows/) for prerequisites per scenario.
 
 **After:** Script creates signed commit. Review with `git show`, push, create PR.
 See [update-catalog.md](.agents/workflows/update-catalog.md) for details.
+
+## Which Workflow Do I Need?
+
+**Choose based on your task:**
+
+1. **Adding or updating Submariner bundles** (most common)
+   → Use [update-catalog.md](.agents/workflows/update-catalog.md) - Add new versions or rebuild with new image SHAs
+
+2. **Converting staged URLs to production** (after prod release)
+   → Use [update-prod-url.md](.agents/workflows/update-prod-url.md) - Update template from quay.io to registry.redhat.io
+
+3. **Adding support for new OCP version** (when Red Hat releases new OpenShift)
+   → Use [add-ocp-version.md](.agents/workflows/add-ocp-version.md) - Configure catalog for new OCP version
+
+## Makefile Targets
+
+### Main Workflow
+
+| Target | Description | Usage |
+| --- | --- | --- |
+| `update-bundle` | Add/update operator bundles with scenario detection | `make update-bundle VERSION=0.23.1` |
+
+### Catalog Operations
+
+| Target | Description | Usage |
+| --- | --- | --- |
+| `build-catalogs` | Builds File-Based Catalogs for all supported OCP versions (4-14 through 4-21) | `make build-catalogs` |
+| `validate-catalogs` | Validates FBC structure and bundle references | `make validate-catalogs` |
+| `fetch-catalog` | Extract production catalog for debugging/reference | `make fetch-catalog [OCP_VERSION=4.21] [PACKAGE=submariner]` |
+| `extract-image` | Extract container image filesystem for inspection | `make extract-image IMAGE=<image> [OUTPUT_DIR=<path>]` |
+
+### Container Image Operations
+
+| Target | Description | Usage |
+| --- | --- | --- |
+| `build-image` | Builds the OCI image for the generated catalog | `make build-image` |
+| `run-image` | Runs the catalog OCI image on port 50051 | `make run-image` |
+| `test-image` | Tests the running catalog image (availability and package list) | `make test-image` |
+| `stop-image` | Stops any running catalog OCI image instances | `make stop-image` |
+
+### Test Targets
+
+| Target | Description | Usage |
+| --- | --- | --- |
+| `test` | Fast unit + integration tests (~10s) - runs in CI | `make test` |
+| `test-e2e` | End-to-end tests (~45s) - requires cluster access | `make test-e2e` |
+
+### Linting
+
+| Target | Description | Usage |
+| --- | --- | --- |
+| `shellcheck` | Lint shell scripts | `make shellcheck` |
+| `mdlint` | Lint Markdown files | `make mdlint` |
+| `yamllint` | Lint YAML files | `make yamllint` |
+| `lint` | Run all linting | `make lint` |
+| `ci` | Run catalog validation, linting, and fast tests | `make ci` |
+
+### Tool Installation
+
+| Target | Description | Usage |
+| --- | --- | --- |
+| `opm` | Install `opm` (Operator Package Manager) v1.56.0 | `make opm` |
+| `grpcurl` | Install `grpcurl` v1.9.3 for testing | `make grpcurl` |
+
+### Utilities
+
+| Target | Description | Usage |
+| --- | --- | --- |
+| `clean` | Clean build/test artifacts and restore from git | `make clean` |
 
 ## Repository Structure
 
@@ -114,62 +176,6 @@ Three test levels with increasing integration scope:
 - `make validate-catalogs` - Validates catalog structure
 
 **Local Development:** Use `SKIP_AUTH_TESTS=true make test` to skip cluster-dependent tests.
-
-## Makefile Targets
-
-### Main Workflow
-
-| Target | Description | Usage |
-| --- | --- | --- |
-| `update-bundle` | Add/update operator bundles with scenario detection | `make update-bundle VERSION=0.23.1` |
-
-### Catalog Operations
-
-| Target | Description | Usage |
-| --- | --- | --- |
-| `build-catalogs` | Builds File-Based Catalogs for all supported OCP versions (4-14 through 4-21) | `make build-catalogs` |
-| `validate-catalogs` | Validates FBC structure and bundle references | `make validate-catalogs` |
-| `fetch-catalog` | Extract production catalog for debugging/reference | `make fetch-catalog [OCP_VERSION=4.21] [PACKAGE=submariner]` |
-| `extract-image` | Extract container image filesystem for inspection | `make extract-image IMAGE=<image> [OUTPUT_DIR=<path>]` |
-
-### Container Image Operations
-
-| Target | Description | Usage |
-| --- | --- | --- |
-| `build-image` | Builds the OCI image for the generated catalog | `make build-image` |
-| `run-image` | Runs the catalog OCI image on port 50051 | `make run-image` |
-| `test-image` | Tests the running catalog image (availability and package list) | `make test-image` |
-| `stop-image` | Stops any running catalog OCI image instances | `make stop-image` |
-
-### Test Targets
-
-| Target | Description | Usage |
-| --- | --- | --- |
-| `test` | Fast unit + integration tests (~10s) - runs in CI | `make test` |
-| `test-e2e` | End-to-end tests (~45s) - requires cluster access | `make test-e2e` |
-
-### Linting
-
-| Target | Description | Usage |
-| --- | --- | --- |
-| `shellcheck` | Lint shell scripts | `make shellcheck` |
-| `mdlint` | Lint Markdown files | `make mdlint` |
-| `yamllint` | Lint YAML files | `make yamllint` |
-| `lint` | Run all linting | `make lint` |
-| `ci` | Run catalog validation, linting, and fast tests | `make ci` |
-
-### Tool Installation
-
-| Target | Description | Usage |
-| --- | --- | --- |
-| `opm` | Install `opm` (Operator Package Manager) v1.56.0 | `make opm` |
-| `grpcurl` | Install `grpcurl` v1.9.3 for testing | `make grpcurl` |
-
-### Utilities
-
-| Target | Description | Usage |
-| --- | --- | --- |
-| `clean` | Clean build/test artifacts and restore from git | `make clean` |
 
 ## Troubleshooting
 
