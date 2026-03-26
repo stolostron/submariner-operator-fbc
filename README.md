@@ -129,9 +129,9 @@ Creates `submariner-catalog-config-4.19.yaml` with the production catalog from `
 
 Three test levels with increasing integration scope:
 
-- `make test` - Fast tests (~10s, runs in CI) - unit + integration tests with mocked dependencies
-- `make test-e2e` - End-to-end tests (~45s) - requires cluster access, tests real Konflux snapshots
-- `make validate-catalogs` - OPM validation - ensures catalog structure correctness
+- `make test` - Fast tests (~10s, runs in CI) - unit + integration tests
+- `make test-e2e` - End-to-end tests (~45s) - requires cluster access
+- `make validate-catalogs` - Validates catalog structure
 
 **Local Development:** Use `SKIP_AUTH_TESTS=true make test` to skip cluster-dependent tests.
 
@@ -175,15 +175,15 @@ Three test levels with increasing integration scope:
 | `shellcheck` | Lint shell scripts | `make shellcheck` |
 | `mdlint` | Lint Markdown files | `make mdlint` |
 | `yamllint` | Lint YAML files | `make yamllint` |
-| `lint` | Run all linting (shellcheck + mdlint + yamllint) | `make lint` |
-| `ci` | Run catalog validation, linting, and fast tests (CI composite target) | `make ci` |
+| `lint` | Run all linting | `make lint` |
+| `ci` | Run catalog validation, linting, and fast tests | `make ci` |
 
 ### Tool Installation
 
 | Target | Description | Usage |
 | --- | --- | --- |
-| `opm` | Ensure `opm` (Operator Package Manager) v1.56.0 is installed | `make opm` |
-| `grpcurl` | Ensure `grpcurl` v1.9.3 is installed for testing | `make grpcurl` |
+| `opm` | Install `opm` (Operator Package Manager) v1.56.0 | `make opm` |
+| `grpcurl` | Install `grpcurl` v1.9.3 for testing | `make grpcurl` |
 
 ### Utilities
 
