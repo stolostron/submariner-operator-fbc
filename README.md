@@ -165,11 +165,9 @@ Creates `submariner-catalog-config-4.19.yaml` with the production catalog from `
 
 ## Testing
 
-Test levels:
-
-- `make test` - Fast tests (~15s, runs in CI) - unit + integration tests
-- `make test-e2e` - End-to-end tests (~45s) - requires cluster access
-- `make validate-catalogs` - Validates catalog structure
+- `make test` - Fast unit + integration tests (~15s)
+- `make test-e2e` - End-to-end tests (~45s, requires cluster)
+- `make validate-catalogs` - Catalog structure validation
 
 Use `SKIP_AUTH_TESTS=true make test` to skip cluster-dependent tests.
 
@@ -236,30 +234,20 @@ Error: Catalog-4-XX validation failed
 
 #### Mirror File Size Limit (4096 bytes)
 
-The `.tekton/images-mirror-set.yaml` file is limited to 4096 bytes due to Tekton task result constraints.
+The `.tekton/images-mirror-set.yaml` file is limited to 4096 bytes (Tekton task result constraint), allowing only one
+unreleased Y-stream at a time. The `make update-bundle` script automatically handles this by:
 
-**Impact:** Only one unreleased Y-stream can exist in the mirror file at a time.
+- Converting released bundles to registry.redhat.io (no mirrors needed)
+- Removing unreleased bundles from other Y-streams with a warning
 
-**Automatic Handling:** When running `make update-bundle`, the script automatically:
-
-- Detects your bundle's Y-stream (e.g., 0-22 for version 0.22.1)
-- Converts released bundles to registry.redhat.io (no mirrors needed)
-- Removes unreleased bundles from other Y-streams with a warning
-
-**What You'll See:**
+Example warning:
 
 ```text
 ⚠ Removing unreleased bundle submariner.v0.23.0 from Y-stream 0-23
   Reason: Mirror file size limit (4KB) allows only one unreleased Y-stream
 ```
 
-**Action Required:** None - this is expected behavior. If you need both Y-streams:
-
-1. Release bundles to registry.redhat.io (preferred), OR
-2. Remove older unreleased bundles from catalog-template.yaml, OR
-3. Coordinate with team on Y-stream priorities
-
-This constraint is enforced by `ensure_mirror_ystream()` in `scripts/update-bundle.sh`.
+No action required - this is expected behavior enforced by `ensure_mirror_ystream()` in `scripts/update-bundle.sh`.
 
 ## Glossary
 
