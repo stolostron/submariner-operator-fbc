@@ -34,7 +34,7 @@ multi-version support.
 
 ```bash
 # Update existing version with new SHA (most common)
-make update-bundle VERSION=0.22.1
+make update-bundle VERSION=0.22.0
 
 # Add first release of new Y-stream
 make update-bundle VERSION=0.23.0
