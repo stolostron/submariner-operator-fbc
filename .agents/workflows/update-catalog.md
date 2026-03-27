@@ -11,13 +11,18 @@
 - Repo root: `cd ~/konflux/submariner-operator-fbc`
 - GitHub repository write permissions (for creating PRs)
 - Release completed in submariner-release-management
+- Registry authentication: `podman login registry.redhat.io` (requires Red Hat subscription)
 
 **Required Tools:**
 
 - `oc` (OpenShift CLI)
 - `gh` (GitHub CLI, authenticated: `gh auth login`)
+- `podman` (Container runtime, for catalog rendering)
+- `skopeo` (Container inspection, for bundle release verification)
 - `make`, `curl`, `jq`, `yq`, `grep`, `awk`, `sed`
 - `git` (for version control)
+- `csplit`, `timeout` (typically pre-installed on Linux)
+- Standard utilities: `find`, `cat`, `tar`, `sort` (with --version-sort), `tr`, `mkdir`, `chmod`, `mktemp` (pre-installed on Linux)
 
 ## Automated Workflow (Recommended)
 
@@ -38,12 +43,12 @@ make update-bundle VERSION=0.22.1 SNAPSHOT=submariner-0-22-xxxxx  # SNAPSHOT: ex
 4. Rebuilds all OCP catalogs (one per supported version in drop-versions.json)
 5. Runs `opm validate` on all catalogs
 6. Formats YAML files
-7. Creates signed commit with scenario metadata
+7. Creates signed-off commit with scenario metadata
 8. Enforces mirror Y-stream constraint (only one unreleased Y-stream allowed due to 4KB limit)
 
 **After the script completes successfully:**
 
-The script creates a signed commit. Review and push:
+The script creates a signed-off commit. Review and push:
 
 ```bash
 git show  # Review the commit
@@ -109,7 +114,7 @@ Build, validate, and test catalogs (~2-5 min):
 
 ```bash
 cd ~/konflux/submariner-operator-fbc
-make build-catalogs validate-catalogs test-scripts
+make build-catalogs validate-catalogs test
 ```
 
 Verify expected file changes (`git status --short`):

@@ -13,7 +13,7 @@
 # - Network access (no RH VPN)
 # - Registry authentication
 #
-# Execution time: ~5-15 minutes
+# Execution time: ~45 seconds
 #
 
 set -euo pipefail
@@ -22,13 +22,14 @@ SCRIPT_DIR=$( cd -- "$( dirname -- "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )
 REPO_ROOT_DIR=$(realpath "${SCRIPT_DIR}/../..")
 
 source "${REPO_ROOT_DIR}/scripts/lib/test-helpers.sh"
+source "${REPO_ROOT_DIR}/test/lib/test-constants.sh"
 
 cd "${REPO_ROOT_DIR}"
 
 echo ""
 echo "=== End-to-End (E2E) Workflow Test ==="
 echo ""
-echo "This test uses REAL external dependencies and is SLOW (~5-15 min)."
+echo "This test uses REAL external dependencies (~45s typical)."
 echo ""
 
 # Save current commit to restore after test
@@ -93,8 +94,8 @@ echo "=== Test Scenario: UPDATE workflow with real data ==="
 echo ""
 
 # Find a real snapshot for testing (use v0.22.1 as example)
-TEST_VERSION="0.22.1"
-Y_STREAM="0-22"
+TEST_VERSION="$TEST_VERSION_22_1"
+Y_STREAM="$TEST_Y_STREAM_22"
 
 echo "Finding latest snapshot for version ${TEST_VERSION}..."
 SNAPSHOT=$(oc get snapshots -n submariner-tenant \
@@ -136,7 +137,7 @@ echo ""
 echo "Running update-bundle.sh with REAL external dependencies..."
 echo "  - Real oc calls (Konflux cluster)"
 echo "  - Real skopeo calls (registry checks)"
-echo "  - Real make build-catalogs (2-5 min)"
+echo "  - Real make build-catalogs (~30s)"
 echo "  - Real opm validate (all supported OCP versions)"
 echo ""
 

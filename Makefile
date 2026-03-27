@@ -31,6 +31,8 @@ help:
 	@echo "Catalogs:"
 	@echo "  build-catalogs      Generate all OCP catalogs from template"
 	@echo "  validate-catalogs   Validate catalogs with opm"
+	@echo "  fetch-catalog       Extract production catalog ([OCP_VERSION=4.21] [PACKAGE=submariner])"
+	@echo "  extract-image       Extract container image filesystem (IMAGE=<image> [OUTPUT_DIR=<path>])"
 	@echo ""
 	@echo "Container images:"
 	@echo "  build-image         Build container image"
@@ -39,8 +41,8 @@ help:
 	@echo "  test-image          Build, run, and test image"
 	@echo ""
 	@echo "Testing & linting:"
-	@echo "  test                Fast unit+integration tests (~10s)"
-	@echo "  test-e2e            E2E tests (~5-15min, requires cluster)"
+	@echo "  test                Unit + integration tests (~90s)"
+	@echo "  test-e2e            E2E tests (~45s, requires cluster)"
 	@echo "  shellcheck          Lint shell scripts"
 	@echo "  mdlint              Lint markdown files"
 	@echo "  yamllint            Lint YAML files"
@@ -88,6 +90,26 @@ validate-catalogs: opm
 		echo "Validating $${catalog} ..."; \
 		$(OPM) validate $${catalog}; \
 	done
+
+.PHONY: fetch-catalog
+fetch-catalog:
+	./scripts/fetch-catalog-containerized.sh "$${OCP_VERSION:-4.21}" "$${PACKAGE:-submariner}"
+
+.PHONY: extract-image
+extract-image:
+	@if [ -z "$(IMAGE)" ]; then \
+		echo "ERROR: IMAGE required"; \
+		echo ""; \
+		echo "Usage:"; \
+		echo "  make extract-image IMAGE=<image_name:tag>"; \
+		echo "  make extract-image IMAGE=<image_name:tag> OUTPUT_DIR=<path>"; \
+		echo ""; \
+		echo "Examples:"; \
+		echo "  make extract-image IMAGE=quay.io/stolostron/submariner-operator-fbc:latest"; \
+		echo "  make extract-image IMAGE=registry.redhat.io/rhacm2/submariner-operator-bundle@sha256:abc123 OUTPUT_DIR=/tmp/extracted"; \
+		exit 1; \
+	fi
+	./scripts/image-extract.sh "$(IMAGE)" $(if $(OUTPUT_DIR),"$(OUTPUT_DIR)")
 
 # ============================================================================
 # Container Image Operations

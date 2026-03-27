@@ -103,7 +103,7 @@ Build, validate, and test catalogs (~2-5 min):
 
 ```bash
 cd ~/konflux/submariner-operator-fbc
-make build-catalogs validate-catalogs test-scripts
+make build-catalogs validate-catalogs test
 ```
 
 **Expected:** ~9 files (1 template + bundle files across supported catalog-* directories).
