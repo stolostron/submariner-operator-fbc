@@ -27,8 +27,8 @@ get_bundle_url() {
 test_no_convertible_bundles() {
   setup_inline_catalog "schema: olm.template.basic
 entries:
-  - name: submariner.v0.21.0
-    image: registry.redhat.io/rhacm2/submariner-operator-bundle@sha256:${TEST_SHA_ABC123}
+  - name: ${TEST_BUNDLE_NAME_21_0}
+    image: ${TEST_BUNDLE_REGISTRY_ABC123}
     schema: olm.bundle"
 
   reset_bundle_arrays
@@ -45,11 +45,11 @@ entries:
 test_single_bundle_conversion() {
   setup_inline_catalog "schema: olm.template.basic
 entries:
-  - name: submariner.v0.22.1
-    image: quay.io/redhat-user-workloads/submariner-tenant/submariner-bundle-0-22@sha256:${TEST_SHA_ABC123}
+  - name: ${TEST_BUNDLE_NAME_22_1}
+    image: ${TEST_BUNDLE_QUAY_22_ABC123}
     schema: olm.bundle"
 
-  CONVERTIBLE_BUNDLES=("submariner.v0.22.1")
+  CONVERTIBLE_BUNDLES=("${TEST_BUNDLE_NAME_22_1}")
 
   convert_released_bundles >/dev/null 2>&1
   local actual_code=$?
@@ -57,9 +57,9 @@ entries:
   assert_exit_code 0 "$actual_code" "Conversion succeeds"
 
   local new_url
-  new_url=$(get_bundle_url "submariner.v0.22.1")
+  new_url=$(get_bundle_url "${TEST_BUNDLE_NAME_22_1}")
 
-  assert_equals "registry.redhat.io/rhacm2/submariner-operator-bundle@sha256:${TEST_SHA_ABC123}" "$new_url" "URL converted to registry.redhat.io"
+  assert_equals "${TEST_BUNDLE_REGISTRY_ABC123}" "$new_url" "URL converted to registry.redhat.io"
 
   # Verify SHA preserved
   local new_sha
@@ -72,14 +72,14 @@ entries:
 test_multiple_bundle_conversion() {
   setup_inline_catalog "schema: olm.template.basic
 entries:
-  - name: submariner.v0.21.2
-    image: quay.io/redhat-user-workloads/submariner-tenant/submariner-bundle-0-21@sha256:${TEST_SHA_ABC123}
+  - name: ${TEST_BUNDLE_NAME_21_2}
+    image: ${TEST_BUNDLE_QUAY_21_ABC123}
     schema: olm.bundle
-  - name: submariner.v0.22.1
-    image: quay.io/redhat-user-workloads/submariner-tenant/submariner-bundle-0-22@sha256:${TEST_SHA_DEF456}
+  - name: ${TEST_BUNDLE_NAME_22_1}
+    image: ${TEST_BUNDLE_QUAY_22_DEF456}
     schema: olm.bundle"
 
-  CONVERTIBLE_BUNDLES=("submariner.v0.21.2" "submariner.v0.22.1")
+  CONVERTIBLE_BUNDLES=("submariner.v0.21.2" "${TEST_BUNDLE_NAME_22_1}")
 
   convert_released_bundles >/dev/null 2>&1
   local actual_code=$?
@@ -89,12 +89,12 @@ entries:
   # Check first bundle
   local url1
   url1=$(get_bundle_url "submariner.v0.21.2")
-  assert_equals "registry.redhat.io/rhacm2/submariner-operator-bundle@sha256:${TEST_SHA_ABC123}" "$url1" "First bundle converted"
+  assert_equals "${TEST_BUNDLE_REGISTRY_ABC123}" "$url1" "First bundle converted"
 
   # Check second bundle
   local url2
-  url2=$(get_bundle_url "submariner.v0.22.1")
-  assert_equals "registry.redhat.io/rhacm2/submariner-operator-bundle@sha256:${TEST_SHA_DEF456}" "$url2" "Second bundle converted"
+  url2=$(get_bundle_url "${TEST_BUNDLE_NAME_22_1}")
+  assert_equals "${TEST_BUNDLE_REGISTRY_DEF456}" "$url2" "Second bundle converted"
 
   cleanup_inline_catalog
 }
@@ -104,18 +104,21 @@ test_sha_preservation() {
 
   setup_inline_catalog "schema: olm.template.basic
 entries:
-  - name: submariner.v0.22.1
+  - name: ${TEST_BUNDLE_NAME_22_1}
     image: quay.io/redhat-user-workloads/submariner-tenant/submariner-bundle-0-22@sha256:${test_sha}
     schema: olm.bundle"
 
-  CONVERTIBLE_BUNDLES=("submariner.v0.22.1")
+  CONVERTIBLE_BUNDLES=("${TEST_BUNDLE_NAME_22_1}")
 
   convert_released_bundles >/dev/null 2>&1
 
   local converted_sha
-  converted_sha=$(extract_sha "$(get_bundle_url 'submariner.v0.22.1')")
+  converted_sha=$(extract_sha "$(get_bundle_url "${TEST_BUNDLE_NAME_22_1}")")
 
-  assert_equals "$test_sha" "$converted_sha" "SHA exactly preserved (no truncation or modification)"
+  local expected_sha
+  expected_sha=$(extract_sha "registry.redhat.io/rhacm2/submariner-operator-bundle@sha256:${test_sha}")
+
+  assert_equals "$expected_sha" "$converted_sha" "SHA exactly preserved (no truncation or modification)"
 
   cleanup_inline_catalog
 }
@@ -123,12 +126,12 @@ entries:
 test_already_converted_bundle() {
   setup_inline_catalog "schema: olm.template.basic
 entries:
-  - name: submariner.v0.21.0
-    image: registry.redhat.io/rhacm2/submariner-operator-bundle@sha256:${TEST_SHA_ABC123}
+  - name: ${TEST_BUNDLE_NAME_21_0}
+    image: ${TEST_BUNDLE_REGISTRY_ABC123}
     schema: olm.bundle"
 
   # Shouldn't happen in practice (audit_bundle_urls filters these), but test graceful handling
-  CONVERTIBLE_BUNDLES=("submariner.v0.21.0")
+  CONVERTIBLE_BUNDLES=("${TEST_BUNDLE_NAME_21_0}")
 
   # Should attempt conversion (will be no-op since extracting SHA and rebuilding same URL)
   convert_released_bundles >/dev/null 2>&1
@@ -137,8 +140,8 @@ entries:
   assert_exit_code 0 "$actual_code" "Handles already-converted bundles gracefully"
 
   local url
-  url=$(get_bundle_url "submariner.v0.21.0")
-  assert_equals "registry.redhat.io/rhacm2/submariner-operator-bundle@sha256:${TEST_SHA_ABC123}" "$url" "URL unchanged"
+  url=$(get_bundle_url "${TEST_BUNDLE_NAME_21_0}")
+  assert_equals "${TEST_BUNDLE_REGISTRY_ABC123}" "$url" "URL unchanged"
 
   cleanup_inline_catalog
 }
@@ -149,25 +152,27 @@ test_mixed_conversion() {
 
   setup_inline_catalog "schema: olm.template.basic
 entries:
-  - name: submariner.v0.22.1
+  - name: ${TEST_BUNDLE_NAME_22_1}
     image: quay.io/redhat-user-workloads/submariner-tenant/submariner-bundle-0-22@sha256:${sha1}
     schema: olm.bundle
-  - name: submariner.v0.23.1
+  - name: ${TEST_BUNDLE_NAME_23_1}
     image: quay.io/redhat-user-workloads/submariner-tenant/submariner-bundle-0-23@sha256:${sha2}
     schema: olm.bundle"
 
   # Only convert v0.22.1, leave v0.23.1 as quay.io
-  CONVERTIBLE_BUNDLES=("submariner.v0.22.1")
+  CONVERTIBLE_BUNDLES=("${TEST_BUNDLE_NAME_22_1}")
 
   convert_released_bundles >/dev/null 2>&1
 
   local url1
-  url1=$(get_bundle_url "submariner.v0.22.1")
-  assert_equals "registry.redhat.io/rhacm2/submariner-operator-bundle@sha256:${sha1}" "$url1" "Released bundle converted"
+  url1=$(get_bundle_url "${TEST_BUNDLE_NAME_22_1}")
+  local expected_url1="registry.redhat.io/rhacm2/submariner-operator-bundle@sha256:${sha1}"
+  assert_equals "$expected_url1" "$url1" "Released bundle converted"
 
   local url2
-  url2=$(get_bundle_url "submariner.v0.23.1")
-  assert_equals "quay.io/redhat-user-workloads/submariner-tenant/submariner-bundle-0-23@sha256:${sha2}" "$url2" "Unreleased bundle unchanged"
+  url2=$(get_bundle_url "${TEST_BUNDLE_NAME_23_1}")
+  local expected_url2="quay.io/redhat-user-workloads/submariner-tenant/submariner-bundle-0-23@sha256:${sha2}"
+  assert_equals "$expected_url2" "$url2" "Unreleased bundle unchanged"
 
   cleanup_inline_catalog
 }
@@ -175,7 +180,7 @@ entries:
 test_bundle_not_in_catalog() {
   setup_inline_catalog "schema: olm.template.basic
 entries:
-  - name: submariner.v0.21.0
+  - name: ${TEST_BUNDLE_NAME_21_0}
     image: registry.redhat.io/rhacm2/submariner-operator-bundle@sha256:${TEST_SHA_ABC123}
     schema: olm.bundle"
 
@@ -195,12 +200,12 @@ entries:
 test_conversion_output_format() {
   setup_inline_catalog "schema: olm.template.basic
 entries:
-  - name: submariner.v0.22.1
-    image: quay.io/redhat-user-workloads/submariner-tenant/submariner-bundle-0-22@sha256:${TEST_SHA_ABC123}
+  - name: ${TEST_BUNDLE_NAME_22_1}
+    image: ${TEST_BUNDLE_QUAY_22_ABC123}
     schema: olm.bundle"
 
   # shellcheck disable=SC2034  # Variable set here, read by convert_released_bundles() in global scope
-  CONVERTIBLE_BUNDLES=("submariner.v0.22.1")
+  CONVERTIBLE_BUNDLES=("${TEST_BUNDLE_NAME_22_1}")
 
   local output
   output=$(convert_released_bundles 2>&1)
