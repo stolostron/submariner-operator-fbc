@@ -23,7 +23,7 @@ Unit tests verify individual functions in isolation without external dependencie
 Run all unit tests:
 
 ```bash
-make test-scripts  # Runs unit + integration + legacy tests
+make test  # Runs unit + integration tests
 ```
 
 Run a specific unit test:
@@ -82,7 +82,7 @@ Unit tests use these assertion helpers from `scripts/lib/test-helpers.sh`:
 2. Add header comment describing what it tests
 3. Source catalog-functions.sh and test-helpers.sh
 4. Write test_* functions
-5. Tests run automatically in `make test-scripts`
+5. Tests run automatically in `make test`
 
 ## See Also
 
