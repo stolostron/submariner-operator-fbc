@@ -10,15 +10,12 @@ fi
 
 # --- Configuration ---
 # The base directory where subdirectories for images will be created.
-BASE_DIR="."
-
-# If a second argument is provided, use it as the base directory
-if [ -n "$2" ]; then
-  BASE_DIR="$2"
+# Convert to absolute path to avoid issues with directory changes/deletions
+if [ -n "${2:-}" ]; then
+  BASE_DIR="$(realpath "$2")"
+else
+  BASE_DIR="$(realpath .)"
 fi
-
-# Change to the base directory to ensure all operations are relative to it
-cd "$BASE_DIR"
 
 # --- Script Logic ---
 
