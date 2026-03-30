@@ -41,8 +41,8 @@ help:
 	@echo "  test-image          Build, run, and test image"
 	@echo ""
 	@echo "Testing & linting:"
-	@echo "  test                Fast unit+integration tests (~10s)"
-	@echo "  test-e2e            E2E tests (~5-15min, requires cluster)"
+	@echo "  test                Unit + integration tests (~90s)"
+	@echo "  test-e2e            E2E tests (~45s, requires cluster)"
 	@echo "  shellcheck          Lint shell scripts"
 	@echo "  mdlint              Lint markdown files"
 	@echo "  yamllint            Lint YAML files"
@@ -67,8 +67,8 @@ update-bundle:
 		echo ""; \
 		echo "Examples:"; \
 		echo "  make update-bundle VERSION=0.22.1                        # UPDATE scenario"; \
-		echo "  make update-bundle VERSION=0.22.0                        # ADD scenario"; \
-		echo "  make update-bundle VERSION=0.21.2 REPLACE=0.21.1         # REPLACE scenario"; \
+		echo "  make update-bundle VERSION=0.22.2                        # ADD scenario"; \
+		echo "  make update-bundle VERSION=0.22.3 REPLACE=0.22.2         # REPLACE scenario"; \
 		echo "  make update-bundle VERSION=0.22.1 SNAPSHOT=submariner-0-22-xxxxx  # Explicit snapshot"; \
 		exit 1; \
 	fi
