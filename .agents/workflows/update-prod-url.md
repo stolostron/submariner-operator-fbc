@@ -90,11 +90,28 @@ vi catalog-template.yaml
 # Update the image URL to registry.redhat.io (keep same SHA)
 ```
 
-**Or scripted:**
+**Or scripted (with safety checks):**
 
 ```bash
+# ⚠️  WARNING: Modifies file in place - verify variables before running!
+
+# Verify variables are set (prevents sed from corrupting file with empty substitutions)
+[[ -z "$Y_STREAM" ]] && { echo "ERROR: Y_STREAM not set (re-run Step 1)"; exit 1; }
+[[ -z "$BUNDLE_SHA" ]] && { echo "ERROR: BUNDLE_SHA not set (re-run Step 1)"; exit 1; }
+echo "✓ Using Y_STREAM=$Y_STREAM, BUNDLE_SHA=${BUNDLE_SHA:0:12}..."
+
+# Ensure you're in a git branch (not main/master)
+CURRENT_BRANCH=$(git rev-parse --abbrev-ref HEAD)
+[[ "$CURRENT_BRANCH" == "main" || "$CURRENT_BRANCH" == "master" ]] && \
+  { echo "ERROR: Don't modify catalog-template.yaml on main/master"; exit 1; }
+
 # Replace quay URL with registry.redhat.io URL (keeping SHA)
 sed -i "s|quay.io/redhat-user-workloads/submariner-tenant/submariner-bundle-0-${Y_STREAM}@sha256:${BUNDLE_SHA}|registry.redhat.io/rhacm2/submariner-operator-bundle@sha256:${BUNDLE_SHA}|g" catalog-template.yaml
+
+# Verify substitution worked
+grep -q "registry.redhat.io.*${BUNDLE_SHA}" catalog-template.yaml || \
+  { echo "ERROR: URL substitution may have failed - review file"; exit 1; }
+echo "✓ URL updated successfully"
 ```
 
 ## 3. Build, Validate, and Test Catalogs
@@ -103,7 +120,7 @@ Build, validate, and test catalogs (~2-5 min):
 
 ```bash
 cd ~/konflux/submariner-operator-fbc
-make build-catalogs validate-catalogs test-scripts
+make build-catalogs validate-catalogs test
 ```
 
 **Expected:** ~9 files (1 template + bundle files across supported catalog-* directories).
@@ -116,13 +133,13 @@ Template shows URL change (quay.io → registry.redhat.io); generated catalogs r
 Create branch and commit:
 
 ```bash
-# Branch naming: <major>.<minor>-prod-url (example for 0.22.1: 22.1-prod-url)
-git checkout -b 22.1-prod-url
+# Branch naming: 0.<minor>.<patch>-prod-url (example for 0.22.1: 0.22.1-prod-url)
+git checkout -b 0.22.1-prod-url
 git add catalog-template.yaml catalog-4-*/
 git commit -s -m "Update catalog template to prod bundle URL for v0.22.1" \
   -m "Changes quay.io pre-release URL to registry.redhat.io production URL." \
   -m "Same SHA digest, prevents quay.io expiration."
-git push origin 22.1-prod-url
+git push origin 0.22.1-prod-url
 ```
 
 Create pull request:

@@ -7,17 +7,22 @@
 **Access & Environment:**
 
 - Konflux cluster access: `oc login --web https://api.kflux-prd-rh02.0fk9.p1.openshiftapps.com:6443/`
-- Off VPN (registry.redhat.io blocks RH VPN)
+- Disconnect from Red Hat VPN (registry.redhat.io blocks RH VPN)
 - Repo root: `cd ~/konflux/submariner-operator-fbc`
 - GitHub repository write permissions (for creating PRs)
 - Release completed in submariner-release-management
+- Registry authentication: `podman login registry.redhat.io` (requires Red Hat subscription)
 
 **Required Tools:**
 
 - `oc` (OpenShift CLI)
 - `gh` (GitHub CLI, authenticated: `gh auth login`)
+- `podman` (Container runtime, for catalog rendering)
+- `skopeo` (Container inspection, for bundle release verification)
 - `make`, `curl`, `jq`, `yq`, `grep`, `awk`, `sed`
 - `git` (for version control)
+- `csplit`, `timeout` (typically pre-installed on Linux)
+- Standard utilities: `find`, `cat`, `tar`, `sort` (with --version-sort), `tr`, `mkdir`, `chmod`, `mktemp` (pre-installed on Linux)
 
 ## Automated Workflow (Recommended)
 
@@ -25,9 +30,9 @@ For most use cases, use the automated script:
 
 ```bash
 make update-bundle VERSION=0.22.1                          # UPDATE: rebuild with new SHA (most common)
-make update-bundle VERSION=0.22.0                          # ADD: new Y-stream version
-make update-bundle VERSION=0.22.1 REPLACE=0.22.0           # REPLACE: skip broken version
-make update-bundle VERSION=0.22.1 SNAPSHOT=submariner-0-22-xxxxx  # SNAPSHOT: explicit build
+make update-bundle VERSION=0.22.2                          # ADD: new version
+make update-bundle VERSION=0.22.3 REPLACE=0.22.2           # REPLACE: skip broken 0.22.2, release 0.22.3
+make update-bundle VERSION=0.22.1 SNAPSHOT=submariner-0-22-r6894  # SNAPSHOT: explicit build
 ```
 
 **What the script does automatically:**
@@ -38,12 +43,12 @@ make update-bundle VERSION=0.22.1 SNAPSHOT=submariner-0-22-xxxxx  # SNAPSHOT: ex
 4. Rebuilds all OCP catalogs (one per supported version in drop-versions.json)
 5. Runs `opm validate` on all catalogs
 6. Formats YAML files
-7. Creates signed commit with scenario metadata
+7. Creates signed-off commit with scenario metadata
 8. Enforces mirror Y-stream constraint (only one unreleased Y-stream allowed due to 4KB limit)
 
 **After the script completes successfully:**
 
-The script creates a signed commit. Review and push:
+The script creates a signed-off commit. Review and push:
 
 ```bash
 git show  # Review the commit
@@ -109,7 +114,7 @@ Build, validate, and test catalogs (~2-5 min):
 
 ```bash
 cd ~/konflux/submariner-operator-fbc
-make build-catalogs validate-catalogs test-scripts
+make build-catalogs validate-catalogs test
 ```
 
 Verify expected file changes (`git status --short`):
@@ -124,12 +129,12 @@ Mirror file updates (.tekton/images-mirror-set.yaml) add 1 file if Y-stream chan
 Create branch and commit:
 
 ```bash
-# Branch naming: <major>.<minor>-stage or <major>.<minor>-prod
-# Example for version 0.21.2: 21.2-stage
-git checkout -b 21.2-stage
+# Branch naming: 0.<minor>.<patch>-stage or 0.<minor>.<patch>-prod
+# Example for version 0.21.2: 0.21.2-stage
+git checkout -b 0.21.2-stage
 git add catalog-template.yaml catalog-4-*/
 git commit -s -m "Update catalog with bundle v0.21.2 stage" -m "Snapshot: submariner-0-21-abc123"
-git push origin 21.2-stage
+git push origin 0.21.2-stage
 ```
 
 Create pull request:

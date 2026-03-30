@@ -14,7 +14,7 @@
 - `gh` (GitHub CLI, authenticated: `gh auth login`)
 - `oc` (OpenShift CLI, logged into Konflux cluster)
 - `make`, `jq`, `yq`, `grep`, `vim` (or preferred editor)
-- `git` (configured for signed commits)
+- `git` (configured for signed-off commits)
 - Network access to registry.redhat.io (for catalog generation)
 
 **Optional Tools** (for troubleshooting):
@@ -112,7 +112,7 @@ grep -A4 "build-args" .tekton/submariner-fbc-${NEW}-push.yaml
 ## 5. Validate, Test, and Commit
 
 ```bash
-make validate-catalogs test-scripts
+make validate-catalogs test
 
 # Commit fix ON TOP of bot's commit
 git add drop-versions.json catalog-${NEW}/ .tekton/submariner-fbc-${NEW}-*.yaml
@@ -157,7 +157,7 @@ Update OCP version references in workflow files:
 
 **[`update-catalog.md`](update-catalog.md):**
 
-- Version loop: Search for `for VERSION in 14 15` and add your new version number to the end of that list
+- Version loop: Search for `for VERSION in 14 15 16 17 18 19 20 21; do` and add your new version number to the end of that list
 
 **[`update-prod-url.md`](update-prod-url.md):**
 

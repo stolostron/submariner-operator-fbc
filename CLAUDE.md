@@ -9,6 +9,7 @@ The `@` references below are markdown includes that import full workflow documen
 
 - **Submariner bundle released?** → [Update FBC Catalog](.agents/workflows/update-catalog.md)
 - **Need to sync prod URLs?** → [Update Catalog Template to Production URL](.agents/workflows/update-prod-url.md)
+  (⚠️ Deprecated - automatic conversion via update-bundle handles 99% of cases)
 - **New OpenShift version?** → [Add Support for New OCP Version](.agents/workflows/add-ocp-version.md)
 
 ## Quick Reference
@@ -20,7 +21,7 @@ The `@` references below are markdown includes that import full workflow documen
 ```bash
 make update-bundle VERSION=0.22.1              # Most common: update with new SHA
 make build-catalogs validate-catalogs          # Build and validate all catalogs
-make test-scripts                               # Run fast tests (~6-7s)
+make test                                        # Run tests (~90s)
 ```
 
 ## Constraints
