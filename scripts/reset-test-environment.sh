@@ -29,6 +29,7 @@ rm -rf \
     original_catalog_template*.yaml \
     registry.redhat.io_* \
     submariner-catalog-config-*.yaml \
+    extracted-catalogs/ \
     tmp.*
 
 # 2. Restore the specific tracked files that were deleted by the rm command above,
@@ -46,7 +47,6 @@ git restore --source="$RESTORE_FROM" catalog-template.yaml \
     catalog-4-18 \
     catalog-4-19 \
     catalog-4-20 \
-    catalog-4-21 \
-    extracted-catalogs
+    catalog-4-21
 
 echo "  - Reset complete."
