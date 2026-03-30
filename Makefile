@@ -149,19 +149,19 @@ test-image: run-image grpcurl
 	fi
 	@echo "# Validate package list"
 	@echo "--> Comparing package list from running image with test/packageList.json"
-	@actual_packages=$(mktemp); \
-	$(GRPCURL) -plaintext localhost:50051 api.Registry.ListPackages > $actual_packages; \
+	@actual_packages=$$(mktemp); \
+	$(GRPCURL) -plaintext localhost:50051 api.Registry.ListPackages > $$actual_packages; \
 	echo "--> Expected packages:"; \
 	cat test/packageList.json; \
 	echo "--> Actual packages from image:"; \
-	cat $actual_packages; \
-	if diff -u test/packageList.json $actual_packages; then \
+	cat $$actual_packages; \
+	if diff -u test/packageList.json $$actual_packages; then \
 		echo "--> Package list validation successful!"; \
 	else \
 		echo "--> Error: Package list validation failed."; \
 		exit 1; \
 	fi; \
-	rm $actual_packages
+	rm $$actual_packages
 
 # ============================================================================
 # Testing
