@@ -39,7 +39,7 @@ TEMP_EXTRACT_DIR=$(realpath "$(mktemp -d -p .)")
 DIR_NAME=$(echo "${catalog_image}" | sed -e 's/[^a-zA-Z0-9._-]/_/g')
 EXTRACTED_CATALOG_PATH="${TEMP_EXTRACT_DIR}/${DIR_NAME}"
 
-OPM_IMAGE="quay.io/operator-framework/opm:latest"
+OPM_IMAGE="quay.io/operator-framework/opm:v1.65.0"
 
 # The catalog is a directory-based FBC with separate JSON files, not a single catalog.json
 # Concatenate package.json, all channel files, and all bundle files, then convert to template
