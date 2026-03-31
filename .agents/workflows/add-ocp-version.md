@@ -38,7 +38,7 @@ MIN_SUB=0.23           # Minimum Submariner version for this OCP
 ## 1. Checkout Bot's PR Branch
 
 After konflux-release-data PR merges, the Konflux bot creates a PR with `.tekton/` files for the new
-component. The bot's PR doesn't populate `build-args` (infrastructure automation limitation) - we must add these before merging.
+component. The bot's PR doesn't populate `build-args` or path filters (infrastructure automation limitation) - we must add these before merging.
 
 ```bash
 # Check for bot PR (may take a few minutes after konflux-release-data merge)
@@ -82,13 +82,17 @@ echo "✓ catalog-${NEW} created"
 **Note:** This step requires network access to registry.redhat.io. If network unavailable, copy from
 previous catalog (e.g., `catalog-4-20`) and include only bundles >= MIN_SUB version.
 
-## 4. Fix Tekton Build Args
+## 4. Fix Tekton Build Args and Triggers
 
 **Reminder:** Ensure `${NEW}` and `${NEW_DOT}` variables from Setup are still defined
 (run `echo $NEW` to verify). If starting a new shell, re-run Setup section.
 
-**Why:** The bot creates basic `.tekton/` files but doesn't know which catalog directory to build or which OPM
-version to use. Without `build-args`, the build fails with "missing INPUT_DIR build argument".
+**Why:** The bot creates basic `.tekton/` files but doesn't know:
+
+1. Which catalog directory to build (needs `build-args`)
+2. When to trigger builds (needs path filters to avoid unnecessary builds)
+
+### 4.1. Add build-args
 
 Add this block after `value: catalog.Dockerfile` and before `pipelineSpec:` in both `.tekton/` files:
 
@@ -99,14 +103,61 @@ Add this block after `value: catalog.Dockerfile` and before `pipelineSpec:` in b
     - OPM_IMAGE=registry.redhat.io/openshift4/ose-operator-registry-rhel9:v4.22  # ← Use your ${NEW_DOT}
 ```
 
-Edit and verify:
+### 4.2. Add path filters to triggers
+
+The bot creates triggers that run on every push/PR to main. Update the `on-cel-expression` to only
+trigger when relevant files change (matches pattern from other versions).
+
+**For push.yaml**, replace:
+
+```yaml
+pipelinesascode.tekton.dev/on-cel-expression: event == "push" && target_branch
+  == "main"
+```
+
+**With:**
+
+```yaml
+pipelinesascode.tekton.dev/on-cel-expression: event == "push" && target_branch == "main" &&
+  (".tekton/submariner-fbc-4-22-pull-request.yaml".pathChanged() ||
+  ".tekton/submariner-fbc-4-22-push.yaml".pathChanged() ||
+  ".tekton/images-mirror-set.yaml".pathChanged() ||
+  "catalog-4-22/***".pathChanged() ||
+  "catalog.Dockerfile".pathChanged())
+```
+
+**For pull-request.yaml**, replace:
+
+```yaml
+pipelinesascode.tekton.dev/on-cel-expression: event == "pull_request" && target_branch
+  == "main"
+```
+
+**With:**
+
+```yaml
+pipelinesascode.tekton.dev/on-cel-expression: event == "pull_request" && target_branch == "main" &&
+  (".tekton/submariner-fbc-4-22-pull-request.yaml".pathChanged() ||
+  ".tekton/submariner-fbc-4-22-push.yaml".pathChanged() ||
+  ".tekton/images-mirror-set.yaml".pathChanged() ||
+  "catalog-4-22/***".pathChanged() ||
+  "catalog.Dockerfile".pathChanged())
+```
+
+**Remember:** Replace `4-22` with your `${NEW}` value in all paths above.
+
+### 4.3. Edit and verify
 
 ```bash
 # Edit both files
 vim .tekton/submariner-fbc-${NEW}-push.yaml .tekton/submariner-fbc-${NEW}-pull-request.yaml
 
-# Verify
+# Verify build-args
 grep -A4 "build-args" .tekton/submariner-fbc-${NEW}-push.yaml
+
+# Verify path filters
+grep -A6 "on-cel-expression" .tekton/submariner-fbc-${NEW}-push.yaml
+grep -A6 "on-cel-expression" .tekton/submariner-fbc-${NEW}-pull-request.yaml
 ```
 
 ## 5. Validate, Test, and Commit
@@ -116,9 +167,10 @@ make validate-catalogs test
 
 # Commit fix ON TOP of bot's commit
 git add drop-versions.json catalog-${NEW}/ .tekton/submariner-fbc-${NEW}-*.yaml
-git commit -s -m "Fix ${NEW_DOT} FBC: add build-args, catalog, and drop-versions entry
+git commit -s -m "Fix ${NEW_DOT} FBC: add build-args, path filters, catalog, and drop-versions
 
 - Add INPUT_DIR=catalog-${NEW} and OPM_IMAGE build-args (critical)
+- Add path filters to on-cel-expression (prevents unnecessary builds)
 - Generate and commit catalog-${NEW}/ directory
 - Add \"${NEW_DOT}\": \"${MIN_SUB}\" to drop-versions.json"
 
@@ -131,7 +183,7 @@ Verify the PR now has 2 commits:
 ```bash
 git log --oneline -2
 # Should show:
-# <your-fix> Fix 4.22 FBC: add build-args, catalog, and drop-versions entry
+# <your-fix> Fix 4.22 FBC: add build-args, path filters, catalog, and drop-versions
 # <bot-commit> Red Hat Konflux kflux-prd-rh02 update submariner-fbc-4-22
 ```
 
@@ -177,6 +229,9 @@ Commit as separate PR or include with other changes.
 
 `CI fails` → Check syntax: `yamllint .tekton/submariner-fbc-${NEW}-*.yaml`; verify INPUT_DIR matches catalog directory;
 check OPM_IMAGE exists: `skopeo list-tags docker://registry.redhat.io/openshift4/ose-operator-registry-rhel9`
+
+`Builds trigger on every push` → Missing path filters in `on-cel-expression`; compare with other versions (4-16 through 4-21)
+to ensure `.pathChanged()` filters are present
 
 `Snapshots missing` (>45min) → Check Konflux UI; verify pipeline: `oc get pipelineruns -n submariner-tenant | grep submariner-fbc-${NEW}`
 
