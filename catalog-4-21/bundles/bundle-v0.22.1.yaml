@@ -1,6 +1,6 @@
 ---
-image: registry.redhat.io/rhacm2/submariner-operator-bundle@sha256:cd0aee16a9557c0c92050a4b03e631d7420f5d63a730544f1ec47af642ee1180
-name: submariner.v0.23.1
+image: registry.redhat.io/rhacm2/submariner-operator-bundle@sha256:39088cefc6419019cd9d83bf2f717634fcd01d9befd37b8342553956fae5dd5f
+name: submariner.v0.22.1
 package: submariner
 properties:
   - type: olm.gvk
@@ -21,7 +21,7 @@ properties:
   - type: olm.package
     value:
       packageName: submariner
-      version: 0.23.1
+      version: 0.22.1
   - type: olm.csv.metadata
     value:
       annotations:
@@ -58,7 +58,7 @@ properties:
                 "globalnetEnabled": false,
                 "namespace": "submariner-operator",
                 "repository": "quay.io/submariner",
-                "version": "0.23.1"
+                "version": "0.22.1"
               }
             },
             {
@@ -92,15 +92,15 @@ properties:
                 "repository": "quay.io/submariner",
                 "serviceCIDR": "192.168.66.0/24",
                 "serviceDiscoveryEnabled": true,
-                "version": "0.23.1"
+                "version": "0.22.1"
               }
             }
           ]
         capabilities: Basic Install
         categories: Networking
         certified: "false"
-        containerImage: registry.redhat.io/rhacm2/submariner-rhel9-operator@sha256:3c25c51ca45b205f856d44e4b7ae706ae21ebc3c4268c81c14d8863349cd0203
-        createdAt: "2026-03-31 15:37:30"
+        containerImage: registry.redhat.io/rhacm2/submariner-rhel9-operator@sha256:5607619ca52e0e14bb8fd06a5d385ce6bfca34c804cf9073f595416680571e86
+        createdAt: "2026-03-26 18:37:18"
         description: Creates and manages Submariner deployments.
         features.operators.openshift.io/disconnected: "true"
         features.operators.openshift.io/fips-compliant: "true"
@@ -510,7 +510,7 @@ properties:
         2. Apply the broker RBAC definitions:
 
             ```shell
-            git clone --depth 1 --single-branch --branch release-0.23 https://github.com/submariner-io/submariner-operator
+            git clone --depth 1 --single-branch --branch release-0.22 https://github.com/submariner-io/submariner-operator
             kubectl apply -k submariner-operator/config/broker -n submariner-k8s-broker
             ```
 
@@ -614,20 +614,20 @@ properties:
       provider:
         name: submariner.io
 relatedImages:
-  - image: registry.redhat.io/rhacm2/lighthouse-agent-rhel9@sha256:9d003dd81854a6cf414117aec4db726614725a81cdd1071a8cefdb3e69f650d0
+  - image: registry.redhat.io/rhacm2/submariner-operator-bundle@sha256:39088cefc6419019cd9d83bf2f717634fcd01d9befd37b8342553956fae5dd5f
+    name: ""
+  - image: registry.redhat.io/rhacm2/lighthouse-agent-rhel9@sha256:8f86cde1183aad5ff0bab97128bf2dd688f931779923ffc6303f0f47c94561a4
     name: submariner-lighthouse-agent
-  - image: registry.redhat.io/rhacm2/lighthouse-coredns-rhel9@sha256:521afd49e45c32f0f0ebc18708825bdf93b3aab2a990d20e773ca87d6b197389
+  - image: registry.redhat.io/rhacm2/lighthouse-coredns-rhel9@sha256:1bd97fa4b87a91e36443833f84ce017066618f34e5cce82af73c59bee13e32b6
     name: submariner-lighthouse-coredns
-  - image: registry.redhat.io/rhacm2/nettest-rhel9@sha256:315dace8eac306f56d642314859e1f9c02441b6c7c76f9754decf020562702a5
+  - image: registry.redhat.io/rhacm2/nettest-rhel9@sha256:1eafc8024d18d6feea7b41bde93762d62d37450985fa51a95e4c842bac9595e9
     name: ""
-  - image: registry.redhat.io/rhacm2/submariner-gateway-rhel9@sha256:f31e0282f8e7512b840a0c8c3017ef96267882fff101db13e4f176de3faf4bf7
+  - image: registry.redhat.io/rhacm2/submariner-gateway-rhel9@sha256:900602519f0db064db116784298be8b0f7c8e955624a1620b12846d90f544456
     name: submariner-gateway
-  - image: registry.redhat.io/rhacm2/submariner-globalnet-rhel9@sha256:310eda5d4c4c0263c3654e180c36680ed6e92c38d98164be92e60946afad19e0
+  - image: registry.redhat.io/rhacm2/submariner-globalnet-rhel9@sha256:9fd3fc2259516c771e8cabe7d2bd2598c5da1babeab6baf89331652d78e91873
     name: submariner-globalnet
-  - image: registry.redhat.io/rhacm2/submariner-operator-bundle@sha256:cd0aee16a9557c0c92050a4b03e631d7420f5d63a730544f1ec47af642ee1180
-    name: ""
-  - image: registry.redhat.io/rhacm2/submariner-rhel9-operator@sha256:3c25c51ca45b205f856d44e4b7ae706ae21ebc3c4268c81c14d8863349cd0203
+  - image: registry.redhat.io/rhacm2/submariner-rhel9-operator@sha256:5607619ca52e0e14bb8fd06a5d385ce6bfca34c804cf9073f595416680571e86
     name: submariner-operator
-  - image: registry.redhat.io/rhacm2/submariner-route-agent-rhel9@sha256:ead549b8fd3140cb09bda4393dcbdea53264f9ad5e0d1a0fde1ffeb14f360f8f
+  - image: registry.redhat.io/rhacm2/submariner-route-agent-rhel9@sha256:2a3751fd14b1acbcd63df00e25e8a677f5881f5e7f6182097732972575a0dda7
     name: submariner-routeagent
 schema: olm.bundle
