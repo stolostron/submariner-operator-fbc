@@ -38,6 +38,9 @@ echo "➡️  Extracting files from image '$IMAGE_ID'..."
 rm -rf "$OUTPUT_DIR"
 mkdir -p "$OUTPUT_DIR"
 
+echo "    Pulling latest image..."
+podman pull "$IMAGE_ID"
+
 echo "    Creating temporary container..."
 # Ensure the temporary container is removed when the script exits, even on error
 trap 'test -n "$CONTAINER_ID" && echo "    Cleaning up temporary container..." && podman rm "$CONTAINER_ID" >/dev/null' EXIT
