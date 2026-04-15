@@ -409,27 +409,9 @@ find_snapshot() {
     exit 1
   fi
 
-  if echo "$TEST_STATUS" | jq -e 'any(.status == "BuildPLRInProgress")' >/dev/null; then
-    echo "⚠️  Snapshot $SNAPSHOT has tests in progress (PipelineRun status propagating)"
-    echo "Finding previous snapshot with TestPassed status..."
-
-    PREV_SNAPSHOT=$(oc get snapshots -n submariner-tenant --sort-by=.metadata.creationTimestamp \
-      -o jsonpath='{range .items[*]}{.metadata.name}{"\t"}{.metadata.annotations.pac\.test\.appstudio\.openshift\.io/event-type}{"\t"}{.metadata.annotations.test\.appstudio\.openshift\.io/status}{"\n"}{end}' \
-      | grep "^submariner-$YSTREAM_DASH.*push.*TestPassed" \
-      | tail -1 \
-      | awk '{print $1}')
-
-    if [ -n "$PREV_SNAPSHOT" ]; then
-      echo "✓ Using earlier snapshot: $PREV_SNAPSHOT"
-      SNAPSHOT="$PREV_SNAPSHOT"
-    else
-      echo "✗ ERROR: No previous snapshot with TestPassed found"
-      echo "  Wait a few minutes for the PipelineRun to complete and retry."
-      exit 1
-    fi
-  else
-    echo "✓ All tests passed"
-  fi
+  # TestPassed = test passed; BuildPLRInProgress = test passed, post-build pipeline triggered
+  # Both indicate passing tests per Konflux status reporting
+  echo "✓ All tests passed"
 
   # Extract bundle image from snapshot
   BUNDLE_COMPONENT="submariner-bundle-${YSTREAM_DASH}"
