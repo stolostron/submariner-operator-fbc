@@ -2,6 +2,9 @@
 entries:
   - name: submariner.v0.23.1
     skipRange: '>=0.18.0 <0.23.1'
+  - name: submariner.v0.23.2
+    replaces: submariner.v0.23.1
+    skipRange: '>=0.23.1 <0.23.2'
 name: stable-0.23
 package: submariner
 schema: olm.channel
