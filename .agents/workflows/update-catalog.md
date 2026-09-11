@@ -152,10 +152,22 @@ Wait for CI checks to complete (~5-15 min), then verify:
 gh pr checks
 ```
 
-CI tests FBC builds for all supported OCP versions with multiple
-scenarios (operator, standard). All checks must pass.
+CI tests FBC builds for all supported OCP versions with two EC scenarios per version:
 
-Merge when passing:
+- **`submariner-fbc-operator-4-XX`** — EC operator policy. Must pass. Validates that the
+  FBC content meets operator catalog requirements.
+- **`submariner-fbc-standard-4-XX`** — EC standard policy. **Expected to fail on PR builds
+  from a fork** — EC validates build provenance and the PR snapshot's source is the fork
+  repo (`dfarrell07/submariner-operator-fbc`), not the upstream. On push snapshots (after
+  merge to `stolostron/main`) this scenario shows `BuildPLRInProgress` (the EC pipeline
+  never completes), which is treated as a pass. Neither the PR `TestFail` nor the push
+  `BuildPLRInProgress` indicates a real content problem — only `operator` matters for
+  merge decisions.
+
+So the merge gate is: all GitHub Actions pass + all `operator-4-XX` Konflux checks pass.
+The `standard-4-XX` failures are noise and do not block merge.
+
+Merge when `operator` checks are passing:
 
 ```bash
 gh pr merge --squash
@@ -163,13 +175,13 @@ gh pr merge --squash
 
 ## 5. Verify Konflux Snapshots
 
-Wait for Konflux builds (~15-30 min after merge).
+Wait for Konflux push builds (~15-30 min after merge).
 
-Verify OCP versions show `TestPassed`:
+Verify all OCP versions show `TestPassed` for the `operator` scenario:
 
 ```bash
 # Loop through all supported OCP versions (adjust range as versions are added/dropped)
-for VERSION in 14 15 16 17 18 19 20 21; do
+for VERSION in 14 15 16 17 18 19 20 21 22; do
   SNAPSHOT=$(oc get snapshots -n submariner-tenant \
     --sort-by=.metadata.creationTimestamp \
     | grep "^submariner-fbc-4-$VERSION" | tail -1 | awk '{print $1}')
@@ -180,8 +192,9 @@ for VERSION in 14 15 16 17 18 19 20 21; do
 done
 ```
 
-All scenarios should show `TestPassed`. The snapshot names from the output above will be
-needed when creating the FBC release in submariner-release-management.
+Expected: `operator` = `TestPassed`, `standard` = `BuildPLRInProgress` (both are fine).
+The snapshot names from the output above will be needed when creating the FBC release
+in submariner-release-management.
 
 ## Note: Automatic URL Conversion
 
