@@ -181,11 +181,11 @@ Verify all OCP versions show `TestPassed` for the `operator` scenario:
 
 ```bash
 # Loop through all supported OCP versions (adjust range as versions are added/dropped)
-for VERSION in 14 15 16 17 18 19 20 21 22; do
+for OCP in 4-14 4-15 4-16 4-17 4-18 4-19 4-20 4-21 4-22 5-0; do
   SNAPSHOT=$(oc get snapshots -n submariner-tenant \
     --sort-by=.metadata.creationTimestamp \
-    | grep "^submariner-fbc-4-$VERSION" | tail -1 | awk '{print $1}')
-  echo "=== 4-$VERSION: $SNAPSHOT ==="
+    | grep "^submariner-fbc-$OCP-" | tail -1 | awk '{print $1}')
+  echo "=== $OCP: $SNAPSHOT ==="
   oc get snapshot $SNAPSHOT -n submariner-tenant \
     -o jsonpath='{.metadata.annotations["test.appstudio.openshift.io/status"]}' \
     | jq -r '.[] | "\(.scenario): \(.status)"'
