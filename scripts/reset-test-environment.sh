@@ -16,6 +16,11 @@ RESTORE_FROM="${1:-HEAD}"
 # Run from the repo root
 cd "${REPO_ROOT_DIR}"
 
+if [ "${FBC_TEST_SANDBOX:-}" != "$REPO_ROOT_DIR" ] || [ ! -f .fbc-test-sandbox ]; then
+  echo "Refusing to reset a working checkout. Tests create their own candidate sandbox." >&2
+  exit 1
+fi
+
 echo "--> Resetting test environment..."
 
 # 1. Remove all generated files and directories, both tracked and untracked.
@@ -23,8 +28,8 @@ echo "--> Resetting test environment..."
 echo "  - Removing generated files and directories..."
 rm -rf \
     catalog-*/ \
-    catalog-template-4-*.yaml \
-    catalog-4-*.yaml \
+    catalog-template-*-*.yaml \
+    catalog-*-*.yaml \
     test_catalog_template*.yaml \
     original_catalog_template*.yaml \
     registry.redhat.io_* \

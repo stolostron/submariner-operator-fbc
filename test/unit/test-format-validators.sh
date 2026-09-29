@@ -2,6 +2,8 @@
 # test-format-validators.sh - Unit tests for format validation functions
 
 set -euo pipefail
+# shellcheck source=test/lib/isolate.sh
+source "$(dirname "${BASH_SOURCE[0]}")/../lib/isolate.sh"
 
 SCRIPT_DIR=$( cd -- "$( dirname -- "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )
 REPO_ROOT_DIR=$(realpath "${SCRIPT_DIR}/../..")

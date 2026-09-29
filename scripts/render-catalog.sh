@@ -1,99 +1,44 @@
 #!/bin/bash
 set -euo pipefail
 
-if [[ $(basename "${PWD}") != "submariner-operator-fbc" ]]; then
-  echo "error: Script must be run from the base of the repository."
-  exit 1
-fi
+cd "$(dirname "${BASH_SOURCE[0]}")/.."
+OPM_IMAGE="${OPM_IMAGE:-quay.io/operator-framework/opm:v1.56.0}"
 
-OPM_IMAGE="quay.io/operator-framework/opm:latest"
-
-#------------------------------------------------------------------------------
-# retry_command - Retry command up to 3 times with exponential backoff
-#
-# Handles transient registry 503 errors that podman/skopeo retry but opm doesn't
-#------------------------------------------------------------------------------
+# Buffer each attempt: neither partial YAML nor retry diagnostics reach stdout.
 retry_command() {
-    local max_attempts=3
-    local timeout=2
-    local attempt=1
-    local exitCode=0
-
-    while [ $attempt -le $max_attempts ]; do
-        set +e
-        "$@"
-        exitCode=$?
-        set -e
-
-        if [ $exitCode -eq 0 ]; then
-            return 0
-        fi
-
-        if [ $attempt -lt $max_attempts ]; then
-            echo "    --> Attempt $attempt/$max_attempts failed (exit $exitCode). Retrying in ${timeout}s..."
-            sleep $timeout
-            timeout=$((timeout * 2))
-        fi
-        attempt=$((attempt + 1))
-    done
-
-    echo "    --> ERROR: Command failed after $max_attempts attempts"
-    return $exitCode
+  local attempt output rc=1
+  output=$(mktemp)
+  for attempt in 1 2 3; do
+    if "$@" > "$output"; then
+      cat "$output"
+      rm -f "$output"
+      return 0
+    else rc=$?; fi
+    echo "Render attempt $attempt failed (exit $rc)" >&2
+    [ "$attempt" -eq 3 ] || sleep "$attempt"
+  done
+  rm -f "$output"
+  return "$rc"
 }
 
-# Render older catalogs (OCP <= 4.16)
-echo "--> Rendering catalogs for OCP <= 4.16..."
-echo "    (These versions do not require any special rendering flags.)"
-old_catalog_templates=$(find . -name "catalog-template-*.yaml" | grep -e "4-14" -e "4-15" -e "4-16")
-
-for catalog_template in ${old_catalog_templates}; do
+shopt -s nullglob
+catalog_templates=(catalog-template-*-*.yaml)
+[ "${#catalog_templates[@]}" -gt 0 ] || { echo "No catalog templates" >&2; exit 1; }
+for catalog_template in "${catalog_templates[@]}"; do
   output_catalog="${catalog_template//-template/}"
-  echo "    --> Rendering ${catalog_template} to ${output_catalog}..."
-
-  # Check if the template contains registry.redhat.io URLs, which require auth.
-  # If found, use local opm with authentication. Container opm does not reliably
-  # handle registry.redhat.io authentication in all environments.
-  # NOTE: Local opm may fail in some environments with DNS errors like:
-  # `dial tcp: lookup quay.io on [::1]:53: read: connection refused`.
-  # In such cases, podman with quay.io URLs works reliably.
-  if grep -q "registry.redhat.io" "${catalog_template}"; then
-    echo "    --> Found registry.redhat.io URL, using local opm with auth..."
-    DOCKER_CONFIG=~/.docker/ retry_command ./bin/opm alpha render-template basic "${catalog_template}" -o=yaml > "${output_catalog}"
+  flags=()
+  case "$catalog_template" in
+    catalog-template-4-14.yaml|catalog-template-4-15.yaml|catalog-template-4-16.yaml) ;;
+    *) flags+=(--migrate-level=bundle-object-to-csv-metadata) ;;
+  esac
+  if grep -q "registry.redhat.io" "$catalog_template"; then
+    DOCKER_CONFIG="${DOCKER_CONFIG:-$HOME/.docker}" retry_command ./bin/opm alpha render-template basic "$catalog_template" -o=yaml "${flags[@]}" > "$output_catalog.tmp"
   else
-    echo "    --> No private registries detected, using podman..."
-    podman run --rm -v "$(pwd)":/work:z -v /etc/containers:/etc/containers:ro -w /work "${OPM_IMAGE}" \
-      alpha render-template basic "${catalog_template}" \
-      -o=yaml > "${output_catalog}"
+    retry_command podman run --rm -v "$(pwd)":/work:z -v /etc/containers:/etc/containers:ro -w /work "$OPM_IMAGE" \
+      alpha render-template basic "$catalog_template" -o=yaml "${flags[@]}" > "$output_catalog.tmp"
   fi
-
-  echo "    --> Rendering complete for ${output_catalog}"
+  mv "$output_catalog.tmp" "$output_catalog"
 done
-
-# Render newer catalogs (OCP >= 4.17)
-echo ""
-echo "--> Rendering catalogs for OCP >= 4.17..."
-echo "    (These versions require the --migrate-level=bundle-object-to-csv-metadata flag for compatibility.)"
-new_catalog_templates=$(find . -name "catalog-template-*.yaml" | grep -v -e "4-14" -e "4-15" -e "4-16")
-
-for catalog_template in ${new_catalog_templates}; do
-  output_catalog="${catalog_template//-template/}"
-  echo "    --> Rendering ${catalog_template} to ${output_catalog}..."
-
-  # Same authentication logic as older OCP versions (see comment above)
-  if grep -q "registry.redhat.io" "${catalog_template}"; then
-    echo "    --> Found registry.redhat.io URL, using local opm with auth..."
-    DOCKER_CONFIG=~/.docker/ retry_command ./bin/opm alpha render-template basic "${catalog_template}" -o=yaml --migrate-level=bundle-object-to-csv-metadata > "${output_catalog}"
-  else
-    echo "    --> No private registries detected, using podman..."
-    podman run --rm -v "$(pwd)":/work:z -v /etc/containers:/etc/containers:ro -w /work "${OPM_IMAGE}" \
-      alpha render-template basic "${catalog_template}" \
-      -o=yaml --migrate-level=bundle-object-to-csv-metadata > "${output_catalog}"
-  fi
-
-  echo "    --> Rendering complete for ${output_catalog}"
-done
-
-echo "--> All rendering complete."
 
 # Decompose the catalog into files for consumability
 echo ""

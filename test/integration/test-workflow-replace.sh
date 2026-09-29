@@ -5,6 +5,8 @@
 # Why: Prevents users from installing broken versions while preserving upgrade continuity
 
 set -euo pipefail
+# shellcheck source=test/lib/isolate.sh
+source "$(dirname "${BASH_SOURCE[0]}")/../lib/isolate.sh"
 
 SCRIPT_DIR=$( cd -- "$( dirname -- "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )
 REPO_ROOT_DIR=$(realpath "${SCRIPT_DIR}/../..")
@@ -23,7 +25,7 @@ echo ""
 validate_integration_test_prerequisites || exit 1
 initialize_integration_test
 
-create_oc_mock "$TEST_SNAPSHOT_21_DEF456" "$TEST_BUNDLE_QUAY_21_DEF456"
+create_oc_mock "$TEST_SNAPSHOT_21_DEF456" "$TEST_BUNDLE_QUAY_21_DEF456" "$TEST_VERSION_21_3"
 
 setup_mock_bin_dir
 create_skopeo_mock 1 "submariner-bundle-$TEST_Y_STREAM_21"

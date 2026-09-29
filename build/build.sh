@@ -1,35 +1,62 @@
 #!/bin/bash
-
-set -e
-
-SCRIPT_DIR=$( cd -- "$( dirname -- "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )
-REPO_ROOT_DIR=$(realpath "${SCRIPT_DIR}/..")
-
-cd "${REPO_ROOT_DIR}"
-
-echo "--> Cleaning up previous build artifacts (catalog-*/ directories)..."
-rm -rf catalog-*/
-
-echo "--> Generating catalog template..."
+# Build into a sibling staging directory; publish only after every catalog validates.
+set -euo pipefail
+root=$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)
+stage=$(mktemp -d "$root/.catalog-build.XXXXXX")
+lock="$root/.catalog-build.lock"
+if ! mkdir "$lock" 2>/dev/null; then
+  rm -rf "$stage"
+  echo "Another catalog build holds $lock" >&2
+  exit 1
+fi
+versions=()
+committed=false
+cleanup() {
+  local status=$? version rollback_failed=false
+  trap '' INT TERM
+  if ! "$committed"; then
+    for version in "${versions[@]}"; do
+      # Filesystem state is authoritative, including a signal immediately after mv.
+      if [ -e "$stage/previous-$version" ]; then
+        if ! rm -rf "$root/catalog-$version" || ! mv "$stage/previous-$version" "$root/catalog-$version"; then
+          rollback_failed=true
+        fi
+      elif [ -f "$stage/absent-$version" ]; then
+        rm -rf "$root/catalog-$version" || rollback_failed=true
+      fi
+    done
+  fi
+  if "$rollback_failed"; then
+    echo "Rollback failed; originals retained in $stage; lock retained at $lock" >&2
+    return 1
+  fi
+  rm -rf "$stage"
+  rmdir "$lock"
+  return "$status"
+}
+trap cleanup EXIT
+trap 'exit 130' INT
+trap 'exit 143' TERM
+mkdir -p "$stage/scripts" "$stage/bin"
+cp "$root/catalog-template.yaml" "$root/drop-versions.json" "$stage/"
+cp "$root/scripts/"{generate-catalog-template,render-catalog,format-yaml}.sh "$stage/scripts/"
+cp "$root/bin/opm" "$stage/bin/opm"
+cd "$stage"
 ./scripts/generate-catalog-template.sh
-
-echo "--> Rendering catalog templates..."
 ./scripts/render-catalog.sh
-
-echo "--> Formatting YAML files..."
 ./scripts/format-yaml.sh
-
-echo "--> Build complete."
-
-echo "--> Cleaning up intermediate catalog templates..."
-rm -f catalog-template-4-*.yaml
-
-echo "
-##################################################"
-echo "## Build Summary"
-echo "##################################################"
-echo "The following catalog directories were generated:"
-for catalog_dir in catalog-*/; do
-  find "${catalog_dir}" -print
-  echo
+mapfile -t versions < <(jq -r 'keys[] | gsub("\\."; "-")' drop-versions.json)
+for version in "${versions[@]}"; do
+  ./bin/opm validate "catalog-$version"
 done
+# All fallible render/validation work finished. Preserve unrelated/unmapped paths.
+for version in "${versions[@]}"; do
+  if [ -e "$root/catalog-$version" ]; then
+    mv "$root/catalog-$version" "$stage/previous-$version"
+  else
+    touch "$stage/absent-$version"
+  fi
+  mv "$stage/catalog-$version" "$root/catalog-$version"
+done
+committed=true
+echo "Validated and published ${#versions[@]} catalogs."
