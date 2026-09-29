@@ -1,7 +1,7 @@
 # ============================================================================
 # Variables & Configuration
 # ============================================================================
-LOCAL_BIN ?= $(PWD)/bin
+LOCAL_BIN ?= $(CURDIR)/bin
 export PATH := $(LOCAL_BIN):$(PATH)
 GOOS := $(shell go env GOOS)
 GOARCH := $(shell go env GOARCH)
@@ -52,7 +52,7 @@ help:
 	@echo "Tools:"
 	@echo "  opm                 Ensure opm v1.56.0 is installed"
 	@echo "  grpcurl             Ensure grpcurl v1.9.3 is installed"
-	@echo "  clean               Clean build/test artifacts and restore from git"
+	@echo "  clean               Remove local binaries; preserve catalog edits"
 
 # ============================================================================
 # Main Workflow
@@ -86,9 +86,9 @@ build-catalogs: opm
 
 .PHONY: validate-catalogs
 validate-catalogs: opm
-	@for catalog in catalog-*/; do \
+	@set -e; for catalog in catalog-*/; do \
 		echo "Validating $${catalog} ..."; \
-		$(OPM) validate $${catalog}; \
+		$(OPM) validate "$${catalog}"; \
 	done
 
 .PHONY: fetch-catalog
@@ -116,52 +116,28 @@ extract-image:
 # ============================================================================
 
 .PHONY: build-image
+CATALOG ?= catalog-4-22
+OPM_IMAGE ?= quay.io/operator-framework/opm:v1.65.0
+
 build-image:
-	podman build -t $(IMG) -f catalog.Dockerfile --build-arg INPUT_DIR=$$(find catalog-* -type d -maxdepth 0 | head -1) .
+	@test -d "$(CATALOG)" || (echo "Missing CATALOG=$(CATALOG)"; exit 1)
+	podman build -t "$(IMG)" -f catalog.Dockerfile --build-arg INPUT_DIR="$(CATALOG)" --build-arg OPM_IMAGE="$(OPM_IMAGE)" .
 
 # ref: https://github.com/operator-framework/operator-registry?tab=readme-ov-file#using-the-catalog-locally
 .PHONY: run-image
+LOCAL_CONTAINER ?= submariner-fbc-local
+LOCAL_PORT ?= 50051
+
 run-image: build-image
-	$(MAKE) stop-image
-	podman run -d -p 50051:50051 $(IMG) &
+	podman run --rm --name "$(LOCAL_CONTAINER)" -d -p "127.0.0.1:$(LOCAL_PORT):50051" "$(IMG)"
 
 .PHONY: stop-image
 stop-image:
-	podman stop --filter "ancestor=$(IMG)"
+	podman stop "$(LOCAL_CONTAINER)"
 
 .PHONY: test-image
-test-image: run-image grpcurl
-	@echo "# Checking availability of server endpoint"
-	@connected=false; \
-	for i in $$(seq 1 5); do \
-		if $(GRPCURL) -plaintext localhost:50051 list > /dev/null 2>&1; then \
-			echo "--> Connection successful on attempt $${i}."; \
-			connected=true; \
-			break; \
-		else \
-			echo "Connection failed. Retrying ($${i}/5)"; \
-			sleep 3; \
-		fi; \
-	done; \
-	if [ "$$connected" = false ]; then \
-		echo "Error: Could not connect to the server after 5 attempts."; \
-		exit 1; \
-	fi
-	@echo "# Validate package list"
-	@echo "--> Comparing package list from running image with test/packageList.json"
-	@actual_packages=$$(mktemp); \
-	$(GRPCURL) -plaintext localhost:50051 api.Registry.ListPackages > $$actual_packages; \
-	echo "--> Expected packages:"; \
-	cat test/packageList.json; \
-	echo "--> Actual packages from image:"; \
-	cat $$actual_packages; \
-	if diff -u test/packageList.json $$actual_packages; then \
-		echo "--> Package list validation successful!"; \
-	else \
-		echo "--> Error: Package list validation failed."; \
-		exit 1; \
-	fi; \
-	rm $$actual_packages
+test-image: build-image grpcurl
+	./scripts/test-image.sh "$(IMG)" "$(GRPCURL)"
 
 # ============================================================================
 # Testing
@@ -174,7 +150,7 @@ test: opm
 .PHONY: test-e2e
 test-e2e: opm
 	@echo "Running end-to-end tests (slow, requires cluster/network)..."
-	@if [ -d "./test/e2e" ]; then \
+	@set -e; if [ -d "./test/e2e" ]; then \
 		for test_script in ./test/e2e/test-*.sh; do \
 			if [ -f "$$test_script" ]; then \
 				echo ""; \
@@ -266,4 +242,4 @@ grpcurl: $(GRPCURL)
 .PHONY: clean
 clean:
 	-rm -rf bin/
-	./scripts/reset-test-environment.sh
+	@echo "Catalogs preserved. Tests reset only disposable sandboxes."

@@ -5,7 +5,7 @@ Automated catalog distribution for the Submariner multi-cluster networking opera
 ## What is This?
 
 This repository maintains file-based catalogs that make Submariner installable via OpenShift's Operator Lifecycle Manager.
-It automates release updates, multi-version catalog generation, and production URL management across OCP 4-14 through 4-21.
+It automates release updates, multi-version catalog generation, and production URL management for the OCP versions configured in `drop-versions.json`.
 
 **Submariner** enables secure networking between pods and services across multiple Kubernetes clusters.
 
@@ -23,7 +23,7 @@ make update-bundle VERSION=0.22.1 SNAPSHOT=submariner-0-22-20260326-225632-000  
 
 **Submariner bundle released (0.X.Y)?** → [update-catalog.md](.agents/workflows/update-catalog.md)
 
-**Red Hat released new OCP version (4-X)?** → [add-ocp-version.md](.agents/workflows/add-ocp-version.md)
+**Red Hat released new OCP version (including 5.0)?** → [add-ocp-version.md](.agents/workflows/add-ocp-version.md)
 
 ## Makefile Targets
 
@@ -59,13 +59,16 @@ make update-bundle VERSION=0.22.1 SNAPSHOT=submariner-0-22-20260326-225632-000  
 | `extract-image` | Extract image to filesystem (`IMAGE=<img> [OUTPUT_DIR=<dir>]`) |
 | `opm` | Ensure opm v1.56.0 is installed |
 | `grpcurl` | Ensure grpcurl v1.9.3 is installed |
-| `clean` | Clean build/test artifacts and restore from git |
+| `clean` | Remove local binaries; preserve catalog edits |
 
 ## Repository Structure
 
-- **Template:** Editable `catalog-template.yaml` auto-generates read-only `catalog-4-14/` through `catalog-4-21/`
+- **Template:** Editable `catalog-template.yaml` auto-generates read-only `catalog-4-14/` through `catalog-4-22/` and `catalog-5-0/`
 - **Scripts:** `scripts/update-bundle.sh` (workflow automation), `scripts/render-catalog.sh` (catalog builder)
 - **Config:** `drop-versions.json` (OCP version mappings), `.tekton/` (Konflux pipelines for 4-16+)
+
+**Build safety:** Tests run against disposable copies of candidate files, including uncommitted edits.
+Catalog builds validate all staged output before replacing catalog directories.
 
 **Catalog generation:** `make build-catalogs` filters the template per OCP version, renders via `opm alpha render-template`,
 converts quay.io URLs to registry.redhat.io, and formats YAML.
@@ -88,7 +91,7 @@ converts quay.io URLs to registry.redhat.io, and formats YAML.
 - **FBC (File-Based Catalog)**: Declarative YAML format for distributing Kubernetes operators via OLM
 - **Konflux**: Red Hat's CI/CD build platform for containerized applications
 - **Mirror**: Image mirror configuration allowing unreleased quay.io workspace images to be accessed via registry.redhat.io during testing (ImageDigestMirrorSet)
-- **OCP**: OpenShift Container Platform (versions 4-14 through 4-21; Konflux pipelines for 4-16+)
+- **OCP**: OpenShift Container Platform (full major/minor IDs such as 4-22 and 5-0)
 - **OLM (Operator Lifecycle Manager)**: Kubernetes component managing operator installation and upgrades
 - **OPM (Operator Package Manager)**: CLI tool for building and validating OLM catalogs (v1.56.0)
 - **Snapshot**: Konflux build output artifact containing component images
@@ -97,3 +100,18 @@ converts quay.io URLs to registry.redhat.io, and formats YAML.
   - Bundles: `0.X.Y` format (e.g., `submariner.v0.22.1`)
   - Snapshots: `submariner-0-X-YYYYMMDD-HHMMSS-NNN` format (e.g., `submariner-0-22-20260326-225632-000`)
   - Y-stream: `0-X` format representing minor version family (e.g., `0-22` for all v0.22.x releases)
+
+### OCP onboarding and live E2E evidence
+
+`make test-e2e` runs in a disposable copy with real Konflux and registry reads.
+It checks the snapshot event label, exact bundle `csv-version`, completed
+`TestPassed` results, every configured catalog, and the resulting fixture commit.
+Use `TEST_VERSION=0.24.1 TEST_SNAPSHOT=<name> make test-e2e` to pin the input.
+Pending, warning, or absent test results block this test; a detail message does
+not override the reported status. It does not publish images or releases.
+
+The cross-repository onboarding E2E runner lives in
+`submariner-release-management/scripts/tests/e2e_fbc_onboarding.py`. It exercises
+configuration generation, both pipeline events, mixed-major catalog rendering,
+repeatability, and an OCP 5 base image serving the catalog through gRPC. An actual
+OCP 5 operator installation and QE run remain separate required evidence.

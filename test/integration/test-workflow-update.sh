@@ -5,6 +5,8 @@
 # Why: FBC must track latest bundle SHA (~40% of updates)
 
 set -euo pipefail
+# shellcheck source=test/lib/isolate.sh
+source "$(dirname "${BASH_SOURCE[0]}")/../lib/isolate.sh"
 
 SCRIPT_DIR=$( cd -- "$( dirname -- "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )
 REPO_ROOT_DIR=$(realpath "${SCRIPT_DIR}/../..")
@@ -24,7 +26,7 @@ validate_integration_test_prerequisites || exit 1
 initialize_integration_test
 
 # Create oc mock for UPDATE scenario
-create_oc_mock "$TEST_SNAPSHOT_21_ABC123" "$TEST_BUNDLE_QUAY_21_ABC123"
+create_oc_mock "$TEST_SNAPSHOT_21_ABC123" "$TEST_BUNDLE_QUAY_21_ABC123" "$TEST_VERSION_21_2"
 
 setup_mock_bin_dir
 create_skopeo_mock 0

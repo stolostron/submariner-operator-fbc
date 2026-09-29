@@ -12,6 +12,8 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
       - name: Install dependencies
         run: |
           sudo apt-get update
@@ -20,6 +22,28 @@ jobs:
           sudo wget -qO /usr/bin/yq ${url}/yq_linux_amd64
           sudo chmod +x /usr/bin/yq
       - name: Test image
-        run: make test-image
-      - name: Stop image
-        run: make stop-image
+        env:
+          BASE_SHA: ${{ github.event.pull_request.base.sha || github.event.before }}
+        # Public CI uses upstream OPM; onboarding also tests the authenticated OCP base.
+        run: |
+          if [[ -z "$BASE_SHA" || "$BASE_SHA" =~ ^0+$ ]]; then
+            BASE_SHA=$(git hash-object -t tree /dev/null)
+          fi
+          changes=$(git diff --name-only "$BASE_SHA" "$GITHUB_SHA")
+          mapfile -t catalogs < <(
+            printf '%s\n' "$changes" |
+              sed -nE 's@^(catalog-[0-9]+-[0-9]+)/.*@\1@p' | sort -u |
+              while read -r catalog; do
+                if [[ -d "$catalog" ]]; then printf '%s\n' "$catalog"; fi
+              done
+          )
+          if [[ ${#catalogs[@]} -eq 0 ]] ||
+             printf '%s\n' "$changes" | grep -Eq '^(catalog\.Dockerfile|Makefile|scripts/|build/|drop-versions\.json|\.github/workflows/test-image\.yml)'; then
+            mapfile -t catalogs < <(jq -r 'keys[] | "catalog-" + gsub("\\."; "-")' drop-versions.json)
+          fi
+          [[ ${#catalogs[@]} -gt 0 ]]
+          for catalog in "${catalogs[@]}"; do
+            image="localhost/fbc-ci:$catalog"
+            make test-image CATALOG="$catalog" IMG="$image"
+            podman rmi "$image"
+          done

@@ -1,6 +1,8 @@
 #!/bin/bash
 
 set -euo pipefail
+# shellcheck source=test/lib/isolate.sh
+source "$(dirname "${BASH_SOURCE[0]}")/../lib/isolate.sh"
 
 SCRIPT_DIR=$( cd -- "$( dirname -- "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )
 REPO_ROOT_DIR=$(realpath "${SCRIPT_DIR}/../..")
@@ -13,19 +15,18 @@ echo "    Note: test-build.sh now validates existing catalogs instead of rebuild
 echo "    to avoid registry.redhat.io rate limiting issues when pulling 24+ bundles."
 echo ""
 
-# Check that the expected number of catalog directories exist
-num_catalogs=$(ls -d catalog-4-*/ 2>/dev/null | wc -l)
-if [[ "${num_catalogs}" -eq 0 ]]; then
-  echo "Error: No catalog directories found."
-  echo "Run 'make build-catalogs' first to generate catalogs."
-  exit 1
-fi
-echo "  ✓ Found ${num_catalogs} catalog directories"
+mapfile -t versions < <(jq -r 'keys[] | gsub("\\."; "-")' drop-versions.json)
+num_catalogs=${#versions[@]}
+[ "$num_catalogs" -gt 0 ] || exit 1
+for version in "${versions[@]}"; do
+  [ -d "catalog-$version" ] || { echo "Missing configured catalog-$version" >&2; exit 1; }
+done
 
 # Validate each catalog with opm
 echo "--> Running opm validate on each catalog..."
 failed=0
-for catalog_dir in catalog-4-*/; do
+for version in "${versions[@]}"; do
+  catalog_dir="catalog-$version"
   catalog_name=$(basename "$catalog_dir")
   if ./bin/opm validate "$catalog_dir" > /dev/null 2>&1; then
     echo "  ✓ ${catalog_name}: valid"

@@ -1,6 +1,8 @@
 #!/bin/bash
 
 set -euo pipefail
+# shellcheck source=test/lib/isolate.sh
+source "$(dirname "${BASH_SOURCE[0]}")/../lib/isolate.sh"
 
 ./scripts/reset-test-environment.sh
 
@@ -20,7 +22,7 @@ trap cleanup EXIT
 ./scripts/generate-catalog-template.sh
 
 # Verify all expected OCP version templates were created
-EXPECTED_VERSIONS=(4-14 4-15 4-16 4-17 4-18 4-19 4-20 4-21)
+mapfile -t EXPECTED_VERSIONS < <(jq -r 'keys[] | gsub("\\."; "-")' drop-versions.json)
 FAILED=0
 
 for VERSION in "${EXPECTED_VERSIONS[@]}"; do

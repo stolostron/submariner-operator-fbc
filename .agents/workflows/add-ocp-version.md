@@ -1,257 +1,58 @@
-# Add Support for New OCP Version
+# Add a new OCP version
 
-**When:** Red Hat releases new OCP version and ACM announces support
-
-## Prerequisites
-
-**External Dependency:**
-
-- konflux-release-data PR for new OCP version must be merged first
-- This triggers the Konflux bot to automatically create a PR in this repo with `.tekton/` pipeline files
-
-**Required Tools:**
-
-- `gh` (GitHub CLI, authenticated: `gh auth login`)
-- `oc` (OpenShift CLI, logged into Konflux cluster)
-- `make`, `jq`, `yq`, `grep`, `vim` (or preferred editor)
-- `git` (configured for signed-off commits)
-- Network access to registry.redhat.io (for catalog generation)
-
-**Optional Tools** (for troubleshooting):
-
-- `yamllint`, `skopeo`
-
-## Setup
-
-**Note:** Run Setup and all steps in the same shell session (variables are not persisted).
+Use the `add-fbc-ocp-version` skill in `submariner-release-management`. Its
+[workflow](https://github.com/stolostron/submariner-release-management/blob/main/.agents/workflows/add-fbc-ocp-version.md)
+covers planning, separate tenant/admission configuration, catalog preparation,
+and readiness. Run its packaged `skills/add-fbc-ocp-version/scripts/run.sh` by
+absolute path from any directory, or invoke the helper directly:
 
 ```bash
-cd ~/konflux/submariner-operator-fbc
-git fetch origin
-
-# Set versions (edit these)
-NEW=4-22               # New OCP version (hyphenated)
-NEW_DOT=4.22           # New OCP version (dotted)
-MIN_SUB=0.23           # Minimum Submariner version for this OCP
+/path/to/submariner-release-management/scripts/add-fbc-ocp-version.sh \
+  5.0 --min-supported-sub 0.24 --phase plan \
+  --fbc-repo /path/to/submariner-operator-fbc \
+  --release-data-repo /path/to/konflux-release-data
 ```
 
-## 1. Checkout Bot's PR Branch
+The minimum is inclusive. `drop-versions.json` remains a drop-through map:
+`"5.0": "0.23"` includes 0.24 and newer; `"5.0": "0.24"` removes 0.24.
+Choose the supported stream explicitly. The template must already contain its
+bundles and a populated default channel.
 
-After konflux-release-data PR merges, the Konflux bot creates a PR with `.tekton/` files for the new
-component. The bot's PR doesn't populate `build-args` or path filters (infrastructure automation limitation) - we must add these before merging.
+Configuration must reconcile before expecting PAC builds. A bot PR is optional:
+look for the actual PR and inspect its files; if none exists, the helper prepares
+a pipeline pair from the preceding merged version. Preserve the chosen pipeline
+structure and validate names, labels, service account, CEL paths, all four
+platforms, and event-specific image tags/expiry. Do not assume two commits or a
+particular bot branch name.
+
+OCP 5.0 uses `registry.redhat.io/openshift5/ose-operator-registry-rhel9:v5.0`.
+The major changes its registry namespace, not its RHEL generation. Both push and
+PR pipelines need `INPUT_DIR=catalog-5-0` and that exact OPM base. Preserve base
+image annotations because the release pipeline derives the index version from
+them. Shared stage/prod admissions already use a templated OCP index version.
+
+`make build-catalogs` renders in a staging directory and validates every catalog
+before publishing output. `make test` and individual test scripts copy candidate
+files, including uncommitted changes, into disposable Git repositories. The reset
+helper refuses to operate on a normal checkout. `make validate-catalogs` fails if
+any catalog fails, including a newly introduced major version.
+
+Select the catalog/base explicitly for a local image test:
 
 ```bash
-# Check for bot PR (may take a few minutes after konflux-release-data merge)
-gh pr list --search "submariner-fbc-${NEW}"
-
-# Get the bot's branch name and checkout
-BOT_BRANCH="konflux-submariner-fbc-${NEW}"
-git checkout "$BOT_BRANCH"
-git log --oneline -2  # Should show bot's commit on top
+make test-image CATALOG=catalog-5-0 \
+  OPM_IMAGE=registry.redhat.io/openshift5/ose-operator-registry-rhel9:v5.0
 ```
 
-**Note:** If the bot PR doesn't appear after ~10 minutes, check that the konflux-release-data PR was
-merged and ArgoCD has synced the new Application/Component resources.
-
-## 2. Update drop-versions.json
-
-Add entry mapping OCP version to minimum Submariner version:
-
-```bash
-# View current entries
-cat drop-versions.json
-
-# Add new entry (insert before closing brace)
-# Example: "4.22": "0.23"
-```
-
-Edit `drop-versions.json` to add the new OCP version entry.
-
-## 3. Build Catalogs
-
-Generate catalog directory for the new OCP version:
-
-```bash
-make build-catalogs
-
-# Verify new catalog was created
-ls -d catalog-${NEW}/ || { echo "ERROR: catalog-${NEW} not created"; exit 1; }
-echo "✓ catalog-${NEW} created"
-```
-
-**Note:** This step requires network access to registry.redhat.io. If network unavailable, copy from
-previous catalog (e.g., `catalog-4-20`) and include only bundles >= MIN_SUB version.
-
-## 4. Fix Tekton Build Args and Triggers
-
-**Reminder:** Ensure `${NEW}` and `${NEW_DOT}` variables from Setup are still defined
-(run `echo $NEW` to verify). If starting a new shell, re-run Setup section.
-
-**Why:** The bot creates basic `.tekton/` files but doesn't know:
-
-1. Which catalog directory to build (needs `build-args`)
-2. When to trigger builds (needs path filters to avoid unnecessary builds)
-
-### 4.1. Add build-args
-
-Add this block after `value: catalog.Dockerfile` and before `pipelineSpec:` in both `.tekton/` files:
-
-```yaml
-  - name: build-args
-    value:
-    - INPUT_DIR=catalog-4-22        # ← Use your ${NEW} value
-    - OPM_IMAGE=registry.redhat.io/openshift4/ose-operator-registry-rhel9:v4.22  # ← Use your ${NEW_DOT}
-```
-
-### 4.2. Add path filters to triggers
-
-The bot creates triggers that run on every push/PR to main. Update the `on-cel-expression` to only
-trigger when relevant files change (matches pattern from other versions).
-
-**For push.yaml**, replace:
-
-```yaml
-pipelinesascode.tekton.dev/on-cel-expression: event == "push" && target_branch
-  == "main"
-```
-
-**With:**
-
-```yaml
-pipelinesascode.tekton.dev/on-cel-expression: event == "push" && target_branch == "main" &&
-  (".tekton/submariner-fbc-4-22-pull-request.yaml".pathChanged() ||
-  ".tekton/submariner-fbc-4-22-push.yaml".pathChanged() ||
-  ".tekton/images-mirror-set.yaml".pathChanged() ||
-  "catalog-4-22/***".pathChanged() ||
-  "catalog.Dockerfile".pathChanged())
-```
-
-**For pull-request.yaml**, replace:
-
-```yaml
-pipelinesascode.tekton.dev/on-cel-expression: event == "pull_request" && target_branch
-  == "main"
-```
-
-**With:**
-
-```yaml
-pipelinesascode.tekton.dev/on-cel-expression: event == "pull_request" && target_branch == "main" &&
-  (".tekton/submariner-fbc-4-22-pull-request.yaml".pathChanged() ||
-  ".tekton/submariner-fbc-4-22-push.yaml".pathChanged() ||
-  ".tekton/images-mirror-set.yaml".pathChanged() ||
-  "catalog-4-22/***".pathChanged() ||
-  "catalog.Dockerfile".pathChanged())
-```
-
-**Remember:** Replace `4-22` with your `${NEW}` value in all paths above.
-
-### 4.3. Edit and verify
-
-```bash
-# Edit both files
-vim .tekton/submariner-fbc-${NEW}-push.yaml .tekton/submariner-fbc-${NEW}-pull-request.yaml
-
-# Verify build-args
-grep -A4 "build-args" .tekton/submariner-fbc-${NEW}-push.yaml
-
-# Verify path filters
-grep -A6 "on-cel-expression" .tekton/submariner-fbc-${NEW}-push.yaml
-grep -A6 "on-cel-expression" .tekton/submariner-fbc-${NEW}-pull-request.yaml
-```
-
-## 5. Validate, Test, and Commit
-
-```bash
-make validate-catalogs test
-
-# Commit fix ON TOP of bot's commit
-git add drop-versions.json catalog-${NEW}/ .tekton/submariner-fbc-${NEW}-*.yaml
-git commit -s -m "Fix ${NEW_DOT} FBC: add build-args, path filters, catalog, and drop-versions
-
-- Add INPUT_DIR=catalog-${NEW} and OPM_IMAGE build-args (critical)
-- Add path filters to on-cel-expression (prevents unnecessary builds)
-- Generate and commit catalog-${NEW}/ directory
-- Add \"${NEW_DOT}\": \"${MIN_SUB}\" to drop-versions.json"
-
-# Push to bot's branch (updates the PR)
-git push origin "$BOT_BRANCH"
-```
-
-Verify the PR now has 2 commits:
-
-```bash
-git log --oneline -2
-# Should show:
-# <your-fix> Fix 4.22 FBC: add build-args, path filters, catalog, and drop-versions
-# <bot-commit> Red Hat Konflux kflux-prd-rh02 update submariner-fbc-4-22
-```
-
-## 6. Merge the Fixed PR
-
-Wait for CI checks (~5-15 min), then verify:
-
-```bash
-gh pr checks
-```
-
-CI tests FBC builds for all OCP versions (4-14 through new version) with multiple scenarios. All checks must pass.
-
-Merge when passing:
-
-```bash
-gh pr merge --squash
-```
-
-## 7. Update Workflow Docs (this repo)
-
-Update OCP version references in workflow files:
-
-**[`update-catalog.md`](update-catalog.md):**
-
-- Version loop: Search for `for VERSION in 14 15 16 17 18 19 20 21; do` and add your new version number to the end of that list
-
-**[`update-prod-url.md`](update-prod-url.md):**
-
-- Update all hardcoded version ranges: Search for `"4-14 through 4-21"` and update to include new version
-  (appears in multiple locations describing file counts and CI checks)
-
-Commit as separate PR or include with other changes.
-
-**See also:** [Update FBC Catalog workflow](update-catalog.md) for ongoing catalog maintenance after new OCP version is added.
-
-## Troubleshooting
-
-`Bot PR missing` (>10min) → Verify konflux-release-data merged and ArgoCD synced; check bot watching repo:
-`gh api repos/stolostron/submariner-operator-fbc/pulls --jq '.[].user.login'`
-
-`Build fails` → Verify `drop-versions.json` updated before building; validate syntax: `jq . drop-versions.json`
-
-`CI fails` → Check syntax: `yamllint .tekton/submariner-fbc-${NEW}-*.yaml`; verify INPUT_DIR matches catalog directory;
-check OPM_IMAGE exists: `skopeo list-tags docker://registry.redhat.io/openshift4/ose-operator-registry-rhel9`
-
-`Builds trigger on every push` → Missing path filters in `on-cel-expression`; compare with other versions (4-16 through 4-21)
-to ensure `.pathChanged()` filters are present
-
-`Snapshots missing` (>45min) → Check Konflux UI; verify pipeline: `oc get pipelineruns -n submariner-tenant | grep submariner-fbc-${NEW}`
-
-## Done When
-
-- Fixed PR merged (bot's tekton files + your fix commit)
-- Catalog directory exists on main branch:
-
-  ```bash
-  gh api repos/stolostron/submariner-operator-fbc/contents/catalog-${NEW} --jq '.name'
-  # Should show: catalog-4-22 (or your NEW version)
-  ```
-
-- Konflux snapshots building for new OCP version (~15-30 min after PR merge):
-
-  ```bash
-  oc get snapshots -n submariner-tenant --sort-by=.metadata.creationTimestamp | grep "submariner-fbc-${NEW}" | tail -1
-  # Should show snapshot name
-  ```
-
-- Workflow docs in this repo updated with new OCP version
-
-**Next:** Update submariner-release-management version loops for release workflows.
+A local amd64 image test is separate from Konflux's four-platform build. Check
+image CI's selected catalogs; its public upstream OPM test does not replace the
+explicit authenticated OCP-base command above. The onboarding helper verifies
+each published platform's catalog contents against the merged Git source.
+Check
+required PR checks at the exact head SHA and the merged push build and snapshot.
+Verify bundle identity and completed test scenarios, not snapshot existence.
+Actual OCP 5 support additionally requires evidence that operator installation
+ran on a cluster reporting 5.0. New 5.x overlays use the reviewed upstream 0.3
+install path and the image-push secret's `.dockerconfigjson` key. Profile access
+and an executed install still need evidence; the generic ITS can skip released
+bundles, and an aggregate pass alone is insufficient.

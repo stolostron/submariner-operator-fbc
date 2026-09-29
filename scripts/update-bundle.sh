@@ -350,90 +350,50 @@ parse_args() {
 #------------------------------------------------------------------------------
 find_snapshot() {
   echo "=== Finding Snapshot ==="
-
+  local application="submariner-${YSTREAM_DASH}" snapshot_json image_version
   if [ -z "$SNAPSHOT" ]; then
-    echo "Finding latest passing snapshot for version $YSTREAM_DASH..."
-
-    # Use only push-event snapshots (PRs produce temporary quay.io URLs;
-    # push events use released bundles suitable for catalog updates)
-    SNAPSHOT=$(oc get snapshots -n submariner-tenant --sort-by=.metadata.creationTimestamp \
-      -o jsonpath='{range .items[*]}{.metadata.name}{"\t"}{.metadata.annotations.pac\.test\.appstudio\.openshift\.io/event-type}{"\n"}{end}' \
-      | grep "^submariner-$YSTREAM_DASH.*push$" \
-      | tail -1 \
-      | awk '{print $1}')
-
-    if [ -z "$SNAPSHOT" ]; then
-      echo "✗ ERROR: No push-event snapshot found for version $YSTREAM_DASH"
-      echo ""
-      echo "Expected pattern: submariner-$YSTREAM_DASH-XXXXX (from push events)"
-      echo ""
-      echo "Available push snapshots for $YSTREAM_DASH (recent 5):"
-      oc get snapshots -n submariner-tenant --sort-by=.metadata.creationTimestamp \
-        -o jsonpath='{range .items[*]}{.metadata.name}{"\t"}{.metadata.annotations.pac\.test\.appstudio\.openshift\.io/event-type}{"\n"}{end}' \
-        | grep "^submariner-$YSTREAM_DASH.*push$" | tail -5
-      echo ""
-      echo "If none shown, the release may not have completed yet."
+    echo "Finding latest push snapshot for $application..."
+    SNAPSHOT=$(oc get snapshots -n submariner-tenant -l "appstudio.openshift.io/application=$application" -o json |
+      jq -er --arg app "$application" '
+        [.items[] | select(.spec.application == $app and
+          .metadata.labels["pac.test.appstudio.openshift.io/event-type"] == "push")]
+        | sort_by(.metadata.creationTimestamp) | last | .metadata.name // empty') || {
+      echo "✗ ERROR: No push snapshot found for $application" >&2
       exit 1
-    fi
-    echo "✓ Using snapshot: $SNAPSHOT"
-  else
-    echo "Using explicit snapshot: $SNAPSHOT"
+    }
   fi
-
-  # Verify snapshot exists
-  if ! oc get snapshot "$SNAPSHOT" -n submariner-tenant >/dev/null 2>&1; then
-    echo "✗ ERROR: Snapshot $SNAPSHOT not found"
+  echo "Using snapshot: $SNAPSHOT"
+  # Read one immutable evidence set instead of separate, potentially inconsistent queries.
+  snapshot_json=$(oc get snapshot "$SNAPSHOT" -n submariner-tenant -o json)
+  if ! jq -e --arg app "$application" --arg name "$SNAPSHOT" '
+    .metadata.name == $name and .spec.application == $app and
+    .metadata.labels["pac.test.appstudio.openshift.io/event-type"] == "push"' <<< "$snapshot_json" >/dev/null; then
+    echo "✗ ERROR: Wrong snapshot identity, application, or event" >&2
     exit 1
   fi
-
-  # Verify snapshot tests passed
-  echo "Verifying snapshot tests..."
-  TEST_STATUS=$(oc get snapshot "$SNAPSHOT" -n submariner-tenant \
-    -o jsonpath='{.metadata.annotations.test\.appstudio\.openshift\.io/status}')
-
-  if [ -z "$TEST_STATUS" ]; then
-    echo "✗ ERROR: Snapshot $SNAPSHOT has no test status (may still be building)"
+  TEST_STATUS=$(jq -er '.metadata.annotations["test.appstudio.openshift.io/status"]' <<< "$snapshot_json")
+  if ! jq -e 'type == "array" and length > 0 and all(.[]; .status == "TestPassed") and
+      ([.[].scenario] | length == (unique | length))' <<< "$TEST_STATUS" >/dev/null; then
+    echo "✗ ERROR: Snapshot $SNAPSHOT lacks completed TestPassed results" >&2
+    echo "$TEST_STATUS" >&2
     exit 1
   fi
-
-  # Validate TEST_STATUS is valid JSON before parsing
-  if ! echo "$TEST_STATUS" | jq empty 2>/dev/null; then
-    echo "✗ ERROR: Invalid test status JSON in snapshot $SNAPSHOT"
-    echo "Raw status: $TEST_STATUS"
-    exit 1
-  fi
-
-  if echo "$TEST_STATUS" | jq -e 'any(.status != "TestPassed" and .status != "BuildPLRInProgress")' >/dev/null; then
-    echo "✗ ERROR: Snapshot $SNAPSHOT has tests that are not TestPassed:"
-    echo "$TEST_STATUS" | jq -r '.[] | "\(.scenario): \(.status)"'
-    exit 1
-  fi
-
-  # TestPassed = test passed; BuildPLRInProgress = test passed, post-build pipeline triggered
-  # Both indicate passing tests per Konflux status reporting
   echo "✓ All tests passed"
-
-  # Extract bundle image from snapshot
   BUNDLE_COMPONENT="submariner-bundle-${YSTREAM_DASH}"
-  BUNDLE_IMAGE=$(oc get snapshot "$SNAPSHOT" -n submariner-tenant \
-    -o jsonpath="{.spec.components[?(@.name=='$BUNDLE_COMPONENT')].containerImage}")
-
-  if [ -z "$BUNDLE_IMAGE" ]; then
-    echo "✗ ERROR: Bundle component $BUNDLE_COMPONENT not found in snapshot"
-    echo ""
-    echo "Available components:"
-    oc get snapshot "$SNAPSHOT" -n submariner-tenant -o jsonpath='{.spec.components[*].name}' | tr ' ' '\n'
+  BUNDLE_IMAGE=$(jq -er --arg component "$BUNDLE_COMPONENT" '
+    [.spec.components[] | select(.name == $component)] | select(length == 1) |
+    .[0].containerImage | select(type == "string" and test("^[^[:space:]@]+@sha256:[a-f0-9]{64}$"))' <<< "$snapshot_json") || {
+    echo "✗ ERROR: Missing, duplicate, or malformed bundle component $BUNDLE_COMPONENT" >&2
+    exit 1
+  }
+  # A stream's latest snapshot may already contain a different patch release.
+  image_version=$(skopeo inspect --format '{{ index .Labels "csv-version" }}' "docker://$BUNDLE_IMAGE")
+  if [ "$image_version" != "$VERSION" ]; then
+    echo "✗ ERROR: Snapshot bundle version is '$image_version', requested '$VERSION'" >&2
     exit 1
   fi
-
-  echo "✓ Bundle image: $BUNDLE_IMAGE"
-
-  # Extract SHA
   BUNDLE_SHA=$(extract_sha "$BUNDLE_IMAGE")
-  if [ -z "$BUNDLE_SHA" ]; then
-    echo "✗ ERROR: Could not extract SHA from bundle image"
-    exit 1
-  fi
+  echo "✓ Bundle image: $BUNDLE_IMAGE"
   echo "✓ Bundle SHA: ${BUNDLE_SHA:0:12}..."
   echo ""
 }
@@ -875,7 +835,7 @@ verify_catalogs() {
   VERIFIED=0
   SKIPPED=0
 
-  # Check each OCP version (currently 4-14 through 4-21, but use dynamic detection)
+  # Check each OCP version (currently 4-14 through 4-22 and 5-0, but use dynamic detection)
   for CATALOG_DIR in catalog-*/; do
     if [ ! -d "$CATALOG_DIR" ]; then
       continue
@@ -1022,13 +982,18 @@ Generated by:
 
   # Stage changes
   echo "Staging changes..."
-  if ! git add catalog-template.yaml catalog-*/ 2>/dev/null; then
+  local files=(catalog-template.yaml) catalog
+  while IFS= read -r catalog; do
+    [ ! -d "$catalog" ] || files+=("$catalog")
+  done < <(jq -r 'keys[] | "catalog-" + gsub("\\."; "-")' drop-versions.json)
+  if ! git add -- "${files[@]}"; then
     echo "✗ ERROR: Failed to stage catalog files"
     return 1
   fi
 
   # Stage .tekton if it changed (ADD scenario updates image mirror set)
   if [ -f ".tekton/images-mirror-set.yaml" ] && ! git diff --quiet ".tekton/images-mirror-set.yaml" 2>/dev/null; then
+    files+=(".tekton/images-mirror-set.yaml")
     if ! git add ".tekton/images-mirror-set.yaml"; then
       echo "✗ ERROR: Failed to stage .tekton/images-mirror-set.yaml"
       return 1
@@ -1036,7 +1001,7 @@ Generated by:
   fi
 
   # Check if we have changes to commit
-  if git diff --cached --quiet; then
+  if git diff --cached --quiet -- "${files[@]}"; then
     echo "ℹ️  No changes to commit - catalog already up to date"
     echo "✓ Idempotent: Bundle v$VERSION with snapshot $SNAPSHOT already in catalog"
     echo ""
@@ -1045,7 +1010,7 @@ Generated by:
 
   # Create commit
   echo "Committing..."
-  git commit -m "$COMMIT_MSG" --signoff
+  git commit --only -m "$COMMIT_MSG" --signoff -- "${files[@]}"
 
   echo "✓ Commit created"
   echo ""

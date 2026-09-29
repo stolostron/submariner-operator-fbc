@@ -1,214 +1,62 @@
 #!/bin/bash
-#
-# test-workflow-e2e.sh - End-to-End test with real external dependencies
-#
-# This test verifies the complete update-bundle workflow using:
-# - Real Konflux cluster (oc get snapshots)
-# - Real registries (skopeo inspect)
-# - Real catalog builds (make build-catalogs)
-# - Real OPM validation (all supported OCP versions)
-#
-# Requirements:
-# - oc login to Konflux cluster
-# - Network access (no RH VPN)
-# - Registry authentication
-#
-# Execution time: ~45 seconds
-#
-
+# A read-only live snapshot lookup followed by a real update in a disposable repo.
+# TEST_VERSION (default newest catalog bundle) and TEST_SNAPSHOT can pin test data.
 set -euo pipefail
-
-SCRIPT_DIR=$( cd -- "$( dirname -- "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )
-REPO_ROOT_DIR=$(realpath "${SCRIPT_DIR}/../..")
-
-source "${REPO_ROOT_DIR}/scripts/lib/test-helpers.sh"
-source "${REPO_ROOT_DIR}/test/lib/test-constants.sh"
-
-cd "${REPO_ROOT_DIR}"
-
-echo ""
-echo "=== End-to-End (E2E) Workflow Test ==="
-echo ""
-echo "This test uses REAL external dependencies (~45s typical)."
-echo ""
-
-# Save current commit to restore after test
-BEFORE_TEST_COMMIT=$(git rev-parse HEAD)
-
-# Setup cleanup trap to restore clean state on exit
-cleanup() {
-  echo ""
-  echo "Cleaning up E2E test..."
-
-  # Reset to commit before test (removes any commits created)
-  git reset --hard "$BEFORE_TEST_COMMIT" > /dev/null 2>&1 || true
-
-  # Restore clean git state
-  ./scripts/reset-test-environment.sh "$BEFORE_TEST_COMMIT" > /dev/null 2>&1 || true
-
-  echo "✓ Cleanup complete"
-}
-trap cleanup EXIT
-
-#------------------------------------------------------------------------------
-# Prerequisites Check
-#------------------------------------------------------------------------------
-
-echo "Checking prerequisites..."
-echo ""
-
-# Check oc access to Konflux cluster
-if ! oc whoami > /dev/null 2>&1; then
-  echo "ERROR: Not logged into Konflux cluster"
-  echo "Please run: oc login --web https://api.kflux-prd-rh02.0fk9.p1.openshiftapps.com:6443/"
-  exit 1
+source "$(dirname "${BASH_SOURCE[0]}")/../lib/isolate.sh"
+for tool in oc skopeo yq jq; do command -v "$tool" >/dev/null; done
+oc whoami >/dev/null
+TEST_VERSION=${TEST_VERSION:-$(yq '.entries[] | select(.schema == "olm.bundle") | .name' catalog-template.yaml | sed 's/^submariner.v//' | sort -V | tail -1)}
+[[ "$TEST_VERSION" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]] || { echo 'Specify a stable TEST_VERSION' >&2; exit 1; }
+stream=${TEST_VERSION%.*}
+application="submariner-${stream//./-}"
+component="submariner-bundle-${stream//./-}"
+snapshot_file=$(mktemp)
+trap 'rm -f "$snapshot_file"' EXIT
+if [ -n "${TEST_SNAPSHOT:-}" ]; then
+  oc get snapshot "$TEST_SNAPSHOT" -n submariner-tenant -o json > "$snapshot_file"
+else
+  oc get snapshots -n submariner-tenant -l "appstudio.openshift.io/application=$application" -o json |
+    jq -e --arg app "$application" '
+      [.items[] | select(.spec.application == $app and
+        .metadata.labels["pac.test.appstudio.openshift.io/event-type"] == "push")]
+      | sort_by(.metadata.creationTimestamp) | last // error("No push snapshot")' > "$snapshot_file"
 fi
-echo "✓ Logged into Konflux: $(oc whoami --show-server)"
-
-# Check registry access (requires podman/skopeo authentication, off RH VPN)
-# Use skopeo inspect to verify - requires authenticated registry access
-if ! skopeo inspect docker://registry.redhat.io/ubi9/ubi-minimal:latest > /dev/null 2>&1; then
-  echo "ERROR: Cannot access registry.redhat.io via skopeo"
-  echo "  This test requires authenticated registry access to pull bundle images."
-  echo "  Login with: podman login registry.redhat.io"
-  exit 1
-fi
-echo "✓ Can access registry.redhat.io (authenticated)"
-
-# Check required tools
-for tool in yq jq skopeo; do
-  if ! command -v "$tool" > /dev/null 2>&1; then
-    echo "ERROR: Required tool not found: $tool"
-    exit 1
-  fi
-done
-echo "✓ Required tools available"
-
-echo ""
-
-#------------------------------------------------------------------------------
-# Test Scenario: UPDATE existing bundle with real snapshot
-#------------------------------------------------------------------------------
-
-echo "=== Test Scenario: UPDATE workflow with real data ==="
-echo ""
-
-# Find a real snapshot for testing (use v0.22.1 as example)
-TEST_VERSION="$TEST_VERSION_22_1"
-Y_STREAM="$TEST_Y_STREAM_22"
-
-echo "Finding latest snapshot for version ${TEST_VERSION}..."
-SNAPSHOT=$(oc get snapshots -n submariner-tenant \
-  --sort-by=.metadata.creationTimestamp \
-  -o jsonpath='{range .items[*]}{.metadata.name}{"\t"}{.metadata.annotations.pac\.test\.appstudio\.openshift\.io/event-type}{"\n"}{end}' \
-  | grep "^submariner-${Y_STREAM}.*push$" \
-  | tail -1 \
-  | awk '{print $1}')
-
-if [ -z "$SNAPSHOT" ]; then
-  echo "ERROR: No snapshots found for version ${TEST_VERSION}"
-  echo "Please verify Konflux has built this version."
-  exit 1
-fi
-
-echo "✓ Using snapshot: $SNAPSHOT"
-
-# Get bundle image from snapshot
-BUNDLE_IMAGE=$(oc get snapshot "$SNAPSHOT" -n submariner-tenant \
-  -o jsonpath='{.spec.components[?(@.name=="submariner-bundle-'${Y_STREAM}'")].containerImage}')
-
-if [ -z "$BUNDLE_IMAGE" ]; then
-  echo "ERROR: Could not extract bundle image from snapshot"
-  exit 1
-fi
-
-echo "✓ Bundle image: $BUNDLE_IMAGE"
-
-# Extract SHA
-BUNDLE_SHA=$(echo "$BUNDLE_IMAGE" | grep -oP 'sha256:\K[a-f0-9]{64}')
-echo "✓ Bundle SHA: ${BUNDLE_SHA:0:12}..."
-
-echo ""
-
-#------------------------------------------------------------------------------
-# Run update-bundle.sh with real external calls
-#------------------------------------------------------------------------------
-
-echo "Running update-bundle.sh with REAL external dependencies..."
-echo "  - Real oc calls (Konflux cluster)"
-echo "  - Real skopeo calls (registry checks)"
-echo "  - Real make build-catalogs (~30s)"
-echo "  - Real opm validate (all supported OCP versions)"
-echo ""
-
-# Setup: Use fixture with real bundle SHAs as starting point
-# This allows opm to render the catalog (it needs to pull real images)
-cp test/fixtures/fixture-0-21.yaml catalog-template.yaml
-
-# Run the real workflow (this will take several minutes)
-./scripts/update-bundle.sh --version "$TEST_VERSION" --snapshot "$SNAPSHOT" || {
-  echo "ERROR: update-bundle.sh failed"
+snapshot=$(jq -er '.metadata.name' "$snapshot_file")
+image=$(jq -er --arg app "$application" --arg component "$component" '
+  select(.spec.application == $app and .metadata.labels["pac.test.appstudio.openshift.io/event-type"] == "push")
+  | [.spec.components[] | select(.name == $component)]
+  | select(length == 1) | .[0].containerImage' "$snapshot_file")
+actual_version=$(skopeo inspect --format '{{ index .Labels "csv-version" }}' "docker://$image")
+[ "$actual_version" = "$TEST_VERSION" ] || { echo "Snapshot bundle is $actual_version, requested $TEST_VERSION" >&2; exit 1; }
+# Never hide pending, failed, warning, or absent results in a successful E2E report.
+jq -e '.metadata.annotations["test.appstudio.openshift.io/status"] | fromjson |
+  type == "array" and length > 0 and all(.[]; .status == "TestPassed")' "$snapshot_file" >/dev/null || {
+  echo "Snapshot $snapshot does not report completed TestPassed results:" >&2
+  jq -r '.metadata.annotations["test.appstudio.openshift.io/status"]' "$snapshot_file" >&2
   exit 1
 }
-
-#------------------------------------------------------------------------------
-# Verification
-#------------------------------------------------------------------------------
-
-echo ""
-echo "Verifying E2E workflow results..."
-echo ""
-
-# 1. Bundle SHA updated in catalog-template.yaml
-TEMPLATE_SHA=$(yq eval '.entries[] | select(.schema == "olm.bundle" and .name == "submariner.v'${TEST_VERSION}'") | .image' catalog-template.yaml | grep -oP 'sha256:\K[a-f0-9]{64}')
-assert_equals "$BUNDLE_SHA" "$TEMPLATE_SHA" "Bundle SHA updated in template"
-
-# 2. All 8 catalogs built and valid
-for v in 14 15 16 17 18 19 20 21; do
-  if [ -d "catalog-4-$v" ]; then
-    # Check catalog has bundle file
-    if [ -f "catalog-4-$v/bundles/bundle-v${TEST_VERSION}.yaml" ]; then
-      CATALOG_SHA=$(yq eval '.image' "catalog-4-$v/bundles/bundle-v${TEST_VERSION}.yaml" | grep -oP 'sha256:\K[a-f0-9]{64}')
-      assert_equals "$BUNDLE_SHA" "$CATALOG_SHA" "catalog-4-$v bundle SHA matches"
-    else
-      echo "  ℹ catalog-4-$v: bundle not included (pruned by drop-versions.json)"
-    fi
+# Force a controlled UPDATE even if the candidate already has this digest. The
+# dummy old reference is replaced before rendering; every rendered image is real.
+TEST_VERSION="$TEST_VERSION" yq -e '.entries[] | select(.schema == "olm.bundle" and .name == "submariner.v" + strenv(TEST_VERSION))' catalog-template.yaml >/dev/null
+TEST_VERSION="$TEST_VERSION" yq -i '(.entries[] | select(.schema == "olm.bundle" and .name == "submariner.v" + strenv(TEST_VERSION)) | .image) = "quay.io/example/old@sha256:0000000000000000000000000000000000000000000000000000000000000000"' catalog-template.yaml
+before=$(git rev-parse HEAD)
+./scripts/update-bundle.sh --version "$TEST_VERSION" --snapshot "$snapshot"
+[ "$(git rev-parse HEAD)" != "$before" ]
+sha=${image##*@}
+[ "$(TEST_VERSION="$TEST_VERSION" yq '.entries[] | select(.schema == "olm.bundle" and .name == "submariner.v" + strenv(TEST_VERSION)) | .image' catalog-template.yaml | sed 's/.*@//')" = "$sha" ]
+count=0
+for version in $(jq -r 'keys[]' drop-versions.json); do
+  catalog="catalog-${version//./-}"
+  test -d "$catalog"
+  ./bin/opm validate "$catalog"
+  cutoff=$(jq -r --arg version "$version" '.[$version]' drop-versions.json)
+  # The map drops all patches through the cutoff Y-stream.
+  if [ "$(printf '%s\n' "$cutoff" "$stream" | sort -V | tail -1)" = "$stream" ] && [ "$stream" != "$cutoff" ]; then
+    test -s "$catalog/bundles/bundle-v$TEST_VERSION.yaml"
+    [ "$(yq '.image' "$catalog/bundles/bundle-v$TEST_VERSION.yaml" | sed 's/.*@//')" = "$sha" ]
+  else
+    test ! -e "$catalog/bundles/bundle-v$TEST_VERSION.yaml"
   fi
+  count=$((count + 1))
 done
-
-# 3. Verify commit was created
-TESTS_RUN=$((TESTS_RUN + 1))
-COMMIT_AFTER=$(git rev-parse HEAD)
-if [ "$COMMIT_AFTER" == "$BEFORE_TEST_COMMIT" ]; then
-  echo "  ✗ No commit created by update-bundle.sh"
-  TESTS_FAILED=$((TESTS_FAILED + 1))
-else
-  echo "  ✓ Commit created by update-bundle.sh"
-  TESTS_PASSED=$((TESTS_PASSED + 1))
-fi
-
-#------------------------------------------------------------------------------
-# Summary
-#------------------------------------------------------------------------------
-
-echo ""
-echo "=================================="
-echo "E2E Test Summary:"
-echo "  Total:  $TESTS_RUN"
-echo "  Passed: $TESTS_PASSED"
-echo "  Failed: $TESTS_FAILED"
-echo ""
-
-if [ "$TESTS_FAILED" -eq 0 ]; then
-  echo "[SUCCESS] E2E workflow test passed"
-  echo ""
-  echo "Validated complete workflow with:"
-  echo "  - Real Konflux snapshot: $SNAPSHOT"
-  echo "  - Real bundle SHA: ${BUNDLE_SHA:0:12}..."
-  echo "  - Real catalog builds: 8 OCP versions"
-  echo "  - Real opm validation: All catalogs valid"
-  exit 0
-else
-  echo "FAILED: E2E workflow test"
-  exit 1
-fi
+echo "PASS: real snapshot $snapshot, bundle $TEST_VERSION, $count validated catalogs, fixture commit"

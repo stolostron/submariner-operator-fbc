@@ -5,6 +5,8 @@
 # Why: New versions need proper skipRange and upgrade paths
 
 set -euo pipefail
+# shellcheck source=test/lib/isolate.sh
+source "$(dirname "${BASH_SOURCE[0]}")/../lib/isolate.sh"
 
 SCRIPT_DIR=$( cd -- "$( dirname -- "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )
 REPO_ROOT_DIR=$(realpath "${SCRIPT_DIR}/../..")
@@ -23,7 +25,7 @@ echo ""
 validate_integration_test_prerequisites || exit 1
 initialize_integration_test
 
-create_oc_mock "$TEST_SNAPSHOT_24_XYZ789" "$TEST_BUNDLE_QUAY_24_FEDCBA"
+create_oc_mock "$TEST_SNAPSHOT_24_XYZ789" "$TEST_BUNDLE_QUAY_24_FEDCBA" "$TEST_VERSION_24_0"
 
 setup_mock_bin_dir
 create_skopeo_mock 1 "submariner-bundle-$TEST_Y_STREAM_24"

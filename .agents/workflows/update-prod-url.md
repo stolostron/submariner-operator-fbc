@@ -161,7 +161,7 @@ Wait for CI checks (~5-15 min):
 gh pr checks
 ```
 
-All checks should pass (FBC builds for 4-14 through 4-21).
+All checks should pass (FBC builds for 4-14 through 4-22 and 5-0).
 
 Merge when passing:
 
