@@ -37,17 +37,20 @@ first run. Do not merge #82 before the tenant config is live: the 5-0 push build
   `.tekton/` files in #82 are the pipelines. If a bot PR does appear, reconcile it with #82 instead of adding a second pair.
 - Verify live: Application, Component, ImageRepository, both ITS objects, both release plans, the service account and the image-push secret.
 
-### 2. Confirm OpenShift CI cluster-profile access
+### 2. OpenShift CI cluster-profile access (does not block #82 or the current catalog)
 
 - The 5.0 operator test uses the `deploy-fbc-operator` 0.3 install pipeline, which provisions clusters through the OpenShift CI profile
   `aws-konflux-prod`. Upstream requires requesting access to the shared cluster profiles.
-- Nothing in konflux-release-data shows the submariner tenant has this access. Without it the non-optional `operator` scenario cannot
-  provision a cluster.
-- The public Konflux docs only say to pick a cluster profile that holds the cloud credentials for the `hypershift-hostedcluster-workflow`.
-  The access request itself is in the internal OpenShift CI page linked from the 0.3 `MIGRATION.md`; it is not in these docs.
+- In 0.3, `pick-cluster-params`, provisioning and `deploy-operator` only run when `get-unreleased-bundle` finds an unreleased bundle and
+  the event is a push. `catalog-5-0` currently holds only released bundles (0.24.0 and 0.24.1 from registry.redhat.io), so today the
+  scenario passes without provisioning anything. Access is therefore not needed to get #82 green. It is needed the first time an
+  unreleased bundle lands in `catalog-5-0`, and for any real install evidence.
+- Nothing in konflux-release-data shows the submariner tenant has this access. The public Konflux docs only say to pick a profile that
+  holds the cloud credentials; the request process is in an internal page linked from the 0.3 `MIGRATION.md`.
 - Fallback if access is delayed: keep the `operator` scenario on the 0.1 EaaS path (as 4.22 does) and get the OCP 5.0 install evidence
   manually (step 5). EaaS provisioning may not offer a 5.0 cluster, so this fallback is unverified.
 - Existing 4.x scenarios use the EaaS-based 0.1 path, which upstream says stops working when EaaS is retired. Track that separately.
+- Optional: set `KONFLUX_UI_URL` on the operator scenario; it defaults to the `stone-prd-rh01` UI and only affects log links.
 
 ### 3. Re-run and merge #82
 
@@ -64,9 +67,10 @@ first run. Do not merge #82 before the tenant config is live: the 5-0 push build
 - The stage and prod RPAs template `fromIndex` and `targetIndex` from the OCP version. ART's ACM and MCE 5.0 FBC releases already use the
   same pattern.
 - The Submariner RPAs reuse the shared `fbc-stage` and `fbc-standard` policies. No policy change is needed.
-- First prod release only: every bundle repository referenced by the fragment must have `fbc_opt_in` set in Pyxis, or the release
-  fails. The bundle repository (`rhacm2/submariner-operator-bundle`) is the same one the 4.x catalogs already reference, so it is likely
-  already opted in. That is not verifiable from the local `pyxis-repo-configs` clone, so confirm before the first prod release.
+- Pyxis `fbc_opt_in` for the bundle repository (`rhacm2/submariner-operator-bundle`) is already satisfied: FBC prod releases for the 4.x
+  catalogs completed through 0.24.1 (see `releases/fbc/*/prod/` in `submariner-release-management`), and a first prod FBC release fails
+  without the opt-in. The repository is not defined in the local `pyxis-repo-configs` clone (it is only listed by ID under the ACM
+  product listing), so the flag itself is unverified but no action is expected.
 - Confirm the `v5.0` target index is being published before a prod release. ART's ACM and MCE 5.0 FBC RPAs exist, but the docs describe a
   separate pre-GA index path for content ahead of an OCP GA. Release to stage first and check the index.
 - The fragment must be multi-arch for pre-GA use or multi-platform testing. The 5-0 pipelines build all four platforms.
@@ -83,7 +87,8 @@ A green catalog build only proves packaging.
 - Manual alternative (from the Konflux FBC docs): point a `CatalogSource` at the built fragment on a 5.0 test cluster and install through
   an OLM `Subscription`. Add an `ImageDigestMirrorSet` if the bundle's image pullspecs are not reachable.
 - After deployment run
-  `add-fbc-ocp-version.sh 5.0 --phase verify-live --expected-commit <merged SHA>` from `submariner-release-management`.
+  `add-fbc-ocp-version.sh 5.0 --phase verify-live --expected-commit <merged SHA>` from `submariner-release-management` (its
+  onboarding workflow merged there in #109).
   It checks live resources, the four-platform catalogs and the snapshot tests.
 
 ## Known follow-ups (out of scope for #82)
@@ -96,5 +101,6 @@ A green catalog build only proves packaging.
 
 ## Open decisions
 
-- Is the submariner tenant already approved for the OpenShift CI profile, or does access need to be requested now?
+- Does the submariner tenant have OpenShift CI cluster-profile access, or should it be requested now? (Needed before the first
+  unreleased bundle is added to `catalog-5-0`, not for #82.)
 - Who opens the GitLab merge requests (VPN and GitLab credentials are needed to push)?
