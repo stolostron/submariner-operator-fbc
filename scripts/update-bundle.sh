@@ -372,9 +372,13 @@ find_snapshot() {
     exit 1
   fi
   TEST_STATUS=$(jq -er '.metadata.annotations["test.appstudio.openshift.io/status"]' <<< "$snapshot_json")
-  if ! jq -e 'type == "array" and length > 0 and all(.[]; .status == "TestPassed") and
+  # BuildPLRInProgress is a normal, terminal Konflux status on push snapshots (the build
+  # PipelineRun record is retained, so the annotation never moves off it); it counts as a pass.
+  # Pending, failed, warning, missing, malformed and duplicate results still block.
+  if ! jq -e 'type == "array" and length > 0 and
+      all(.[]; .status == "TestPassed" or .status == "BuildPLRInProgress") and
       ([.[].scenario] | length == (unique | length))' <<< "$TEST_STATUS" >/dev/null; then
-    echo "✗ ERROR: Snapshot $SNAPSHOT lacks completed TestPassed results" >&2
+    echo "✗ ERROR: Snapshot $SNAPSHOT lacks completed passing test results" >&2
     echo "$TEST_STATUS" >&2
     exit 1
   fi

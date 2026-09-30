@@ -16,7 +16,12 @@ export YSTREAM_DASH=$TEST_Y_STREAM_21
 SNAPSHOT=""
 find_snapshot >/dev/null
 test "$SNAPSHOT" = "$TEST_SNAPSHOT_21_ABC123"
-for status in '[]' '{}' 'broken' '[{"scenario":"standard","status":"BuildPLRInProgress"}]' '[{"scenario":"standard","status":"TestWarning"}]'; do
+# BuildPLRInProgress is a normal Konflux status and counts as passing.
+export MOCK_TEST_STATUS='[{"scenario":"standard","status":"BuildPLRInProgress"}]'
+SNAPSHOT=""
+find_snapshot >/dev/null
+test "$SNAPSHOT" = "$TEST_SNAPSHOT_21_ABC123"
+for status in '[]' '{}' 'broken' '[{"scenario":"standard","status":"TestWarning"}]' '[{"scenario":"standard","status":"TestPassed"},{"scenario":"standard","status":"BuildPLRInProgress"}]' '[{"scenario":"standard","status":"Pending"}]'; do
   export MOCK_TEST_STATUS=$status
   if (find_snapshot) >/dev/null 2>&1; then echo "Accepted incomplete result: $status" >&2; exit 1; fi
 done
