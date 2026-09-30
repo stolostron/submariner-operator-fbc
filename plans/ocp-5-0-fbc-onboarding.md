@@ -27,7 +27,9 @@ first run. Do not merge #82 before the tenant config is live: the 5-0 push build
 - Fetch and rebase both onto current `origin/main` (their base `8c18efee29` dates from 2026-09-18).
 - Run `tox` in both, and `tox -e tenants-config-test` for the tenant change.
 - Push branches directly to the GitLab project (do not fork) and open two separate merge requests: tenant and managed admission.
-- CODEOWNERS already covers both paths. `constraints/`, `prodsec/` and `exceptions/` need no change.
+- CODEOWNERS already covers both paths. `prodsec/` and `exceptions/` do not mention submariner FBC applications and need no change.
+  `constraints/product/submariner.yaml` does constrain the RPAs (origin `submariner-tenant`, policy `fbc-standard|fbc-stage`, the
+  `fbc-release` pipeline and release service accounts). The admission change only appends an application, so it stays within it.
 - Reviewers: the release-data docs say `tenants-config/` changes are not reviewed by release engineers. Approval comes from the
   CODEOWNERS team, so the submariner owners can approve the tenant merge request. The RPA lives under `config/`; its CODEOWNERS entry
   is also the submariner team.
@@ -68,9 +70,15 @@ first run. Do not merge #82 before the tenant config is live: the 5-0 push build
   same pattern.
 - The Submariner RPAs reuse the shared `fbc-stage` and `fbc-standard` policies. No policy change is needed.
 - Pyxis `fbc_opt_in` for the bundle repository (`rhacm2/submariner-operator-bundle`) is already satisfied: FBC prod releases for the 4.x
-  catalogs completed through 0.24.1 (see `releases/fbc/*/prod/` in `submariner-release-management`), and a first prod FBC release fails
-  without the opt-in. The repository is not defined in the local `pyxis-repo-configs` clone (it is only listed by ID under the ACM
-  product listing), so the flag itself is unverified but no action is expected.
+  catalogs completed through 0.24.1 (see `releases/fbc/*/prod/` in `submariner-release-management`). The repository is not defined in the
+  local `pyxis-repo-configs` clone (it is only listed by ID under the ACM product listing), so the flag itself is unverified.
+- Do not trust "Release succeeded" alone for prod. The users-docs say a first prod release fails without the opt-in, but the current
+  `prepare-fbc-parameters` task (release-service-catalog, checked at its 2026-09-18 state) only computes the opt-in status. For a
+  standard prod release, an opted-out component sets `mustPublishIndexImage`, `mustSignIndexImage` and `mustOverwriteFromIndexImage`
+  to false and the task still succeeds. Read the run's "Must Publish Index" line and confirm the bundle shows up in the prod index
+  (`get-fbc-urls.sh --prod-index`).
+- The release pipeline's `get-ocp-version` task reads the OCP version from the base image annotation and accepts `vX.Y` with a single-digit
+  major (`^v[0-9]\.[0-9]+$`), so `v5.0` is valid. The index template `{{ OCP_VERSION }}` is otherwise generic.
 - Confirm the `v5.0` target index is being published before a prod release. ART's ACM and MCE 5.0 FBC RPAs exist, but the docs describe a
   separate pre-GA index path for content ahead of an OCP GA. Release to stage first and check the index.
 - The fragment must be multi-arch for pre-GA use or multi-platform testing. The 5-0 pipelines build all four platforms.
