@@ -28,7 +28,13 @@ first run. Do not merge #82 before the tenant config is live: the 5-0 push build
 - Run `tox` in both, and `tox -e tenants-config-test` for the tenant change.
 - Push branches directly to the GitLab project (do not fork) and open two separate merge requests: tenant and managed admission.
 - CODEOWNERS already covers both paths. `constraints/`, `prodsec/` and `exceptions/` need no change.
-- After merge, ArgoCD reconciles the tenant within minutes. The RPA applies on merge.
+- Reviewers: the release-data docs say `tenants-config/` changes are not reviewed by release engineers. Approval comes from the
+  CODEOWNERS team, so the submariner owners can approve the tenant merge request. The RPA lives under `config/`; its CODEOWNERS entry
+  is also the submariner team.
+- After merge, ArgoCD reconciles the tenant within minutes. The RPA applies on merge (`oc apply` in CI).
+- No PaC Repository object is needed: the existing one for this git repo is shared by all the FBC components (it is why the 5-0 pipeline
+  started at all). Do not expect a Konflux onboarding PR: the 4.22 Component had the same shape and no bot PR appeared (see #60), so the
+  `.tekton/` files in #82 are the pipelines. If a bot PR does appear, reconcile it with #82 instead of adding a second pair.
 - Verify live: Application, Component, ImageRepository, both ITS objects, both release plans, the service account and the image-push secret.
 
 ### 2. Confirm OpenShift CI cluster-profile access
@@ -37,6 +43,10 @@ first run. Do not merge #82 before the tenant config is live: the 5-0 push build
   `aws-konflux-prod`. Upstream requires requesting access to the shared cluster profiles.
 - Nothing in konflux-release-data shows the submariner tenant has this access. Without it the non-optional `operator` scenario cannot
   provision a cluster.
+- The public Konflux docs only say to pick a cluster profile that holds the cloud credentials for the `hypershift-hostedcluster-workflow`.
+  The access request itself is in the internal OpenShift CI page linked from the 0.3 `MIGRATION.md`; it is not in these docs.
+- Fallback if access is delayed: keep the `operator` scenario on the 0.1 EaaS path (as 4.22 does) and get the OCP 5.0 install evidence
+  manually (step 5). EaaS provisioning may not offer a 5.0 cluster, so this fallback is unverified.
 - Existing 4.x scenarios use the EaaS-based 0.1 path, which upstream says stops working when EaaS is retired. Track that separately.
 
 ### 3. Re-run and merge #82
@@ -45,6 +55,8 @@ first run. Do not merge #82 before the tenant config is live: the 5-0 push build
 - Check that these work: the `registry.redhat.io/openshift5/ose-operator-registry-rhel9:v5.0` base image pull, the
   `fbc-inject-lifecycle` task, and the `operator` scenario.
 - All task digests are trusted today. `registry.redhat.io/` is allowed by the `fbc-standard` policy.
+- The OCP target version comes from the parent (base) image, not from labels (ADR 0026), so the v5.0 base image is what routes the
+  fragment to the 5.0 index.
 - Merge #82 only after the Konflux check is green.
 
 ### 4. Release plumbing
@@ -52,6 +64,12 @@ first run. Do not merge #82 before the tenant config is live: the 5-0 push build
 - The stage and prod RPAs template `fromIndex` and `targetIndex` from the OCP version. ART's ACM and MCE 5.0 FBC releases already use the
   same pattern.
 - The Submariner RPAs reuse the shared `fbc-stage` and `fbc-standard` policies. No policy change is needed.
+- First prod release only: every bundle repository referenced by the fragment must have `fbc_opt_in` set in Pyxis, or the release
+  fails. The bundle repository (`rhacm2/submariner-operator-bundle`) is the same one the 4.x catalogs already reference, so it is likely
+  already opted in. That is not verifiable from the local `pyxis-repo-configs` clone, so confirm before the first prod release.
+- Confirm the `v5.0` target index is being published before a prod release. ART's ACM and MCE 5.0 FBC RPAs exist, but the docs describe a
+  separate pre-GA index path for content ahead of an OCP GA. Release to stage first and check the index.
+- The fragment must be multi-arch for pre-GA use or multi-platform testing. The 5-0 pipelines build all four platforms.
 - `submariner-release-management` accepts `OCP=5.0`. Add `5-0` to the active list in `scripts/lib/fbc-scope.sh` only after step 5.
 
 ### 5. Evidence before claiming OCP 5 support
@@ -62,6 +80,8 @@ A green catalog build only proves packaging.
 - The provisioned cluster reports 5.0 (`oc get clusterversion version -o json`).
 - The upstream pipeline skips installation for PR events or when there is no unreleased bundle. 0.24.0 and 0.24.1 are already released, so
   use the explicit-bundle QE install procedure on an observed 5.0.x cluster.
+- Manual alternative (from the Konflux FBC docs): point a `CatalogSource` at the built fragment on a 5.0 test cluster and install through
+  an OLM `Subscription`. Add an `ImageDigestMirrorSet` if the bundle's image pullspecs are not reachable.
 - After deployment run
   `add-fbc-ocp-version.sh 5.0 --phase verify-live --expected-commit <merged SHA>` from `submariner-release-management`.
   It checks live resources, the four-platform catalogs and the snapshot tests.
