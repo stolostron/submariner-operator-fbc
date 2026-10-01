@@ -1,6 +1,7 @@
 # Plan: Get the OCP 5.0 FBC building, testing and releasing
 
-Status as of 2026-09-29. Covers what remains after the catalog and tooling work merged.
+Status as of 2026-09-29, with findings added 2026-10-01 (see "Registry access for the operator test"). Covers what remains after the
+catalog and tooling work merged.
 
 ## Where things stand
 
@@ -18,6 +19,45 @@ Status as of 2026-09-29. Covers what remains after the catalog and tooling work 
 
 This is an ordering problem, not a defect in the PR. The 4.22 onboarding (#60) had its tenant config merged first and passed on the
 first run. Do not merge #82 before the tenant config is live: the 5-0 push build would fail on `main`.
+
+## Registry access for the operator test (found 2026-10-01)
+
+Found while releasing Submariner 0.23.4 on the 4.x catalogs. It applies to `catalog-5-0` too, and it will surface the first time a
+push runs the `operator` scenario there.
+
+What happened on 4.x: after the 0.23.4 catalog change merged (#83, #84), the `operator` scenario failed on all six push snapshots
+(4.16 to 4.21) while `standard` was fine. Its `get-unreleased-bundle` step cannot render the production index and fails before
+anything else runs: `failed to fetch anonymous token ... 401 Unauthorized`, then "Make sure you have ImagePullCredentials for
+registry.redhat.io". Re-running the test (label the snapshot `test.appstudio.openshift.io/run=<scenario>`; a `/retest` commit
+comment only rebuilds) fails the same way a day later.
+
+Why it matters for 5.0:
+
+- The 0.3 pipeline's `get-unreleased-bundle` renders `registry.redhat.io/redhat/redhat-operator-index:v5.0` and compares it with
+  the fragment. That index exists and is pullable with credentials (checked 2026-10-01, along with v4.21 and v4.22). In the
+  cluster the pod gets no credentials for it, so every push run of the 5-0 `operator` scenario will fail in that step. This is
+  separate from, and later than, the missing service account that fails #82's PR check today.
+- Step 2 below says the scenario "passes without provisioning anything" while `catalog-5-0` holds only released bundles. That is
+  only true once the registry access works. A green PR check proves nothing here: PR-event runs skip these tasks (about 20
+  seconds) and never touch the registry.
+- The tests run as the `konflux-integration-runner` service account. Per the Konflux docs, only component-image registry secrets
+  are linked to it automatically; credentials for any other registry, `registry.redhat.io` included, must be linked by hand. In
+  the submariner tenant the live pod mounts 18 pull secrets and none is for `registry.redhat.io`. The tenant already has a valid
+  secret for it (`submariner-konflux-registry-redhat-io`, linked to all build-pipeline service accounts); it is not linked to the
+  integration runner. One link fixes every scenario in the tenant, 4.x and 5.0.
+- Fix options: link the secret by hand (`oc secrets link konflux-integration-runner submariner-konflux-registry-redhat-io`),
+  declare the link in the tenant config (the service account is also edited by the integration-service controller, so check how
+  the GitOps apply merges the two first), or ask the Konflux platform team. No version of `deploy-fbc-operator` (0.1 to 0.3) has a
+  credentials parameter, so nothing can be fixed in the scenario itself.
+- Not understood yet: push tests passed through 2026-09-24 without this link, and nothing found in the tenant or upstream explains
+  what changed. The details are in the aSDLC plan in `submariner-release-management` (`plans/agentic-sdlc-jira-updates.md`,
+  section A11).
+
+What the 4.x `operator` scenario really tests: it passes `CHANNEL_NAME=stable`, and no catalog has a channel with that name (they
+are `stable-0.XX`). The step therefore finds no matching bundle, exits as a no-op, and every later task (cluster provisioning,
+install) is skipped. The 4.x scenarios only ever verified that the fragment parses and the production index renders. The 5.0
+overlay uses the package default channel, so for 5.0 the install does run when an unreleased bundle exists; that is the evidence
+step 5 asks for.
 
 ## Steps
 
@@ -58,7 +98,8 @@ first run. Do not merge #82 before the tenant config is live: the 5-0 push build
 
 - Comment `/retest` (or push an empty commit) once the service account exists.
 - Check that these work: the `registry.redhat.io/openshift5/ose-operator-registry-rhel9:v5.0` base image pull, the
-  `fbc-inject-lifecycle` task, and the `operator` scenario.
+  `fbc-inject-lifecycle` task, and the `operator` scenario. The scenario's result on the PR is not enough: it must also pass on a push
+  event, which needs the registry access in "Registry access for the operator test".
 - All task digests are trusted today. `registry.redhat.io/` is allowed by the `fbc-standard` policy.
 - The OCP target version comes from the parent (base) image, not from labels (ADR 0026), so the v5.0 base image is what routes the
   fragment to the 5.0 index.
@@ -106,9 +147,13 @@ A green catalog build only proves packaging.
 - The published `submariner.v0.24.0` bundle image is labeled `csv-version=0.24.1`, though its CSV is 0.24.0. `update-bundle` now checks
   that label, so re-running it for 0.24.0 would fail.
 - The OCP 5 minimum Submariner stream (currently provisional 0.24) is still a rollout policy decision.
+- The 4.x `operator` scenarios use `CHANNEL_NAME=stable`, which no catalog has, so they never install anything. Decide whether to point them
+  at the default channel (real install coverage, but then each push needs cluster provisioning) or leave them as index checks.
 
 ## Open decisions
 
 - Does the submariner tenant have OpenShift CI cluster-profile access, or should it be requested now? (Needed before the first
   unreleased bundle is added to `catalog-5-0`, not for #82.)
 - Who opens the GitLab merge requests (VPN and GitLab credentials are needed to push)?
+- How should `konflux-integration-runner` get `registry.redhat.io` access (manual link, tenant config, or platform fix)? It blocks the 4.x
+  push tests today and the first 5-0 push test later.
