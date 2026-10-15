@@ -7,7 +7,6 @@
 **Access & Environment:**
 
 - Konflux cluster access: `oc login --web https://api.kflux-prd-rh02.0fk9.p1.openshiftapps.com:6443/`
-- Disconnect from Red Hat VPN (registry.redhat.io blocks RH VPN)
 - Repo root: `cd ~/konflux/submariner-operator-fbc`
 - GitHub repository write permissions (for creating PRs)
 - Release completed in submariner-release-management
@@ -68,7 +67,7 @@ Then continue to [Verify CI and Merge](#4-verify-ci-and-merge) for:
 
 Use this only for edge cases or automation troubleshooting.
 
-**Prerequisites:** Same as automated workflow (cluster access, VPN disconnect, repo root), plus:
+**Prerequisites:** Same as automated workflow (cluster access, repo root), plus:
 
 - Ability to manually fetch snapshots from release files
 - Comfort editing YAML files directly
@@ -152,22 +151,15 @@ Wait for CI checks to complete (~5-15 min), then verify:
 gh pr checks
 ```
 
-CI tests FBC builds for all supported OCP versions with two EC scenarios per version:
+For each OCP version the PR rebuilds, require:
 
-- **`submariner-fbc-operator-4-XX`** — EC operator policy. Must pass. Validates that the
-  FBC content meets operator catalog requirements.
-- **`submariner-fbc-standard-4-XX`** — EC standard policy. **Expected to fail on PR builds
-  from a fork** — EC validates build provenance and the PR snapshot's source is the fork
-  repo (`dfarrell07/submariner-operator-fbc`), not the upstream. On push snapshots (after
-  merge to `stolostron/main`) this scenario shows `BuildPLRInProgress` (the EC pipeline
-  never completes), which is treated as a pass. Neither the PR `TestFail` nor the push
-  `BuildPLRInProgress` indicates a real content problem — only `operator` matters for
-  merge decisions.
-
-So the merge gate is: all GitHub Actions pass + all `operator-4-XX` Konflux checks pass.
-The `standard-4-XX` failures are noise and do not block merge.
-
-Merge when `operator` checks are passing:
+- All GitHub Actions checks pass.
+- `submariner-fbc-<ocp>-on-pull-request` (the Konflux build) passes.
+- `submariner-fbc-operator-<ocp>` passes.
+- `submariner-fbc-standard-<ocp>` passes or reports warnings (shown as neutral). Read the
+  report of any failure. Source-provenance violations are expected for a PR from a fork;
+  anything else, such as a missing required build task, would also fail the release, so it
+  blocks merge.
 
 ```bash
 gh pr merge --squash
@@ -175,26 +167,32 @@ gh pr merge --squash
 
 ## 5. Verify Konflux Snapshots
 
-Wait for Konflux push builds (~15-30 min after merge).
-
-Verify all OCP versions show `TestPassed` for the `operator` scenario:
+Wait for Konflux push builds (~15-30 min after merge), then check the newest push
+snapshot of every catalog with a pipeline:
 
 ```bash
-# Loop through all supported OCP versions (adjust range as versions are added/dropped)
-for VERSION in 14 15 16 17 18 19 20 21 22; do
-  SNAPSHOT=$(oc get snapshots -n submariner-tenant \
-    --sort-by=.metadata.creationTimestamp \
-    | grep "^submariner-fbc-4-$VERSION" | tail -1 | awk '{print $1}')
-  echo "=== 4-$VERSION: $SNAPSHOT ==="
-  oc get snapshot $SNAPSHOT -n submariner-tenant \
-    -o jsonpath='{.metadata.annotations["test.appstudio.openshift.io/status"]}' \
-    | jq -r '.[] | "\(.scenario): \(.status)"'
+for OCP in $(ls .tekton/submariner-fbc-*-push.yaml | sed 's/.*submariner-fbc-\(.*\)-push.yaml/\1/'); do
+  oc get snapshots -n submariner-tenant -o json -l \
+    "appstudio.openshift.io/application=submariner-fbc-$OCP,pac.test.appstudio.openshift.io/event-type=push" |
+    jq -r '.items | max_by(.metadata.creationTimestamp) | [
+      .metadata.name, .metadata.labels["pac.test.appstudio.openshift.io/sha"][:8],
+      (.status.conditions[] | select(.type == "AppStudioTestSucceeded") | .reason),
+      (.metadata.annotations["test.appstudio.openshift.io/status"] | fromjson[] |
+        "\(.scenario | sub("submariner-fbc-"; "")): \(.status)\(if .completionTime then "" else " (running)" end)")
+    ] | join("  ")'
 done
 ```
 
-Expected: `operator` = `TestPassed`, `standard` = `BuildPLRInProgress` (both are fine).
-The snapshot names from the output above will be needed when creating the FBC release
-in submariner-release-management.
+Expected for each: the merged commit's SHA, `Passed`, `operator` = `TestPassed`, and `standard` =
+`TestPassed`, `TestWarning` or `BuildPLRInProgress`. A `BuildPLRInProgress` standard result is the
+normal push outcome, but it counts only when the aggregate result is `Passed` and the scenario is
+not `(running)`.
+
+Record the snapshot names for the FBC release in submariner-release-management. Its
+[stage release workflow](https://github.com/stolostron/submariner-release-management/blob/main/.agents/workflows/create-fbc-stage-release.md)
+re-verifies them. Passing snapshot tests don't prove an operator install: the 4.x install
+tests request channel `stable`, which no catalog defines. QE verifies installation on the
+intended `stable-0.X` channel.
 
 ## Note: Automatic URL Conversion
 
@@ -227,7 +225,22 @@ to ensure only one unreleased Y-stream exists at a time.
 
 ### Network/Registry Access
 
-`Failed to access registry.redhat.io` → Disconnect VPN; check firewall/connectivity
+Local `Failed to access registry.redhat.io` → run `podman login registry.redhat.io`; check connectivity.
+
+`401`/`unauthorized` from registry.redhat.io in a Konflux integration test (for example
+`get-unreleased-bundle`) → your local login doesn't apply. The registry credential must be
+linked to the tenant's `konflux-integration-runner` service account; see
+[accessing private repositories](https://konflux-ci.dev/docs/testing/integration/accessing-private-repositories/).
+After fixing it, [rerun the scenario](https://konflux-ci.dev/docs/testing/integration/rerunning/)
+on the same snapshot instead of rebuilding.
+
+### Release Policy Reports a Missing Required Task
+
+Conforma's FBC required tasks change over time
+([current list](https://github.com/release-engineering/rhtap-ec-policy/blob/main/data/required_tasks.yml)).
+Add the task to both push and PR pipelines of every active catalog, as upstream
+`fbc-builder` wires it, then release from the new push snapshot. Retrying the rejected
+snapshot fails again.
 
 ### OPM Validation Failures
 
