@@ -183,10 +183,13 @@ for OCP in $(ls .tekton/submariner-fbc-*-push.yaml | sed 's/.*submariner-fbc-\(.
 done
 ```
 
-Expected for each: the merged commit's SHA, `Passed`, `operator` = `TestPassed`, and `standard` =
+Expected for each: the SHA of the last commit that changed that catalog or its build files
+(`.tekton`, `images-mirror-set.yaml`, `catalog.Dockerfile`; a merge that touches none leaves the
+older SHA in place), `Passed`, `operator` = `TestPassed`, and `standard` =
 `TestPassed` or `BuildPLRInProgress` (`update-bundle` rejects `TestWarning`, though a PR check may
-show it). A `BuildPLRInProgress` standard result is the normal push outcome, but it counts only
-when the aggregate result is `Passed` and the scenario is not `(running)`.
+show it; the release-management verifier applies its own, stricter completion rule). A
+`BuildPLRInProgress` standard result is the normal push outcome, but it counts only when the
+aggregate result is `Passed` and the scenario is not `(running)`.
 
 The OCP 5.0 `operator` scenario is optional while its install path is being enabled, so
 `Passed` can appear next to `operator-5-0: TestFail`. That `TestFail` is the install test
