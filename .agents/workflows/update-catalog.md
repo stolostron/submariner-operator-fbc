@@ -174,19 +174,26 @@ snapshot of every catalog with a pipeline:
 for OCP in $(ls .tekton/submariner-fbc-*-push.yaml | sed 's/.*submariner-fbc-\(.*\)-push.yaml/\1/'); do
   oc get snapshots -n submariner-tenant -o json -l \
     "appstudio.openshift.io/application=submariner-fbc-$OCP,pac.test.appstudio.openshift.io/event-type=push" |
-    jq -r '.items | max_by(.metadata.creationTimestamp) | [
+    jq -r '.items | if length == 0 then "no push snapshot yet" else max_by(.metadata.creationTimestamp) | [
       .metadata.name, .metadata.labels["pac.test.appstudio.openshift.io/sha"][:8],
-      (.status.conditions[] | select(.type == "AppStudioTestSucceeded") | .reason),
-      (.metadata.annotations["test.appstudio.openshift.io/status"] | fromjson[] |
+      ((.status.conditions // [])[] | select(.type == "AppStudioTestSucceeded") | .reason),
+      (.metadata.annotations["test.appstudio.openshift.io/status"] // "[]" | fromjson[] |
         "\(.scenario | sub("submariner-fbc-"; "")): \(.status)\(if .completionTime then "" else " (running)" end)")
-    ] | join("  ")'
+    ] | join("  ") end'
 done
 ```
 
 Expected for each: the merged commit's SHA, `Passed`, `operator` = `TestPassed`, and `standard` =
-`TestPassed`, `TestWarning` or `BuildPLRInProgress`. A `BuildPLRInProgress` standard result is the
-normal push outcome, but it counts only when the aggregate result is `Passed` and the scenario is
-not `(running)`.
+`TestPassed` or `BuildPLRInProgress` (`update-bundle` rejects `TestWarning`, though a PR check may
+show it). A `BuildPLRInProgress` standard result is the normal push outcome, but it counts only
+when the aggregate result is `Passed` and the scenario is not `(running)`.
+
+The OCP 5.0 `operator` scenario is optional while its install path is being enabled, so
+`Passed` can appear next to `operator-5-0: TestFail`. That `TestFail` is the install test
+failing to provision a cluster (the tenant is not yet an owner of the `aws-konflux-prod` cluster
+profile), not a catalog content problem; do not treat it as passing, and
+see the [OCP 5 rollout runbook](https://github.com/stolostron/submariner-release-management/blob/main/plans/ocp-5-0-fbc-rollout.md)
+for the gates before 5.0 is released.
 
 Record the snapshot names for the FBC release in submariner-release-management. Its
 [stage release workflow](https://github.com/stolostron/submariner-release-management/blob/main/.agents/workflows/create-fbc-stage-release.md)
