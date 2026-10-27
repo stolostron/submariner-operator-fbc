@@ -161,6 +161,8 @@ For each OCP version the PR rebuilds, require:
   anything else, such as a missing required build task, would also fail the release, so it
   blocks merge.
 
+When every check above is satisfied, merge:
+
 ```bash
 gh pr merge --squash
 ```
@@ -168,7 +170,7 @@ gh pr merge --squash
 ## 5. Verify Konflux Snapshots
 
 Wait for Konflux push builds (~15-30 min after merge), then check the newest push
-snapshot of every catalog with a pipeline:
+snapshot of every catalog with a pipeline. Run this from the repo root:
 
 ```bash
 for OCP in $(ls .tekton/submariner-fbc-*-push.yaml | sed 's/.*submariner-fbc-\(.*\)-push.yaml/\1/'); do
@@ -185,16 +187,16 @@ done
 
 Expected for each: the SHA of the last commit that changed that catalog or its build files
 (`.tekton`, `images-mirror-set.yaml`, `catalog.Dockerfile`; a merge that touches none leaves the
-older SHA in place), `Passed`, `operator` = `TestPassed`, and `standard` =
-`TestPassed` or `BuildPLRInProgress` (`update-bundle` rejects `TestWarning`, though a PR check may
-show it; the release-management verifier applies its own, stricter completion rule). A
-`BuildPLRInProgress` standard result is the normal push outcome, but it counts only when the
-aggregate result is `Passed` and the scenario is not `(running)`.
+older SHA in place), `Passed`, `operator` = `TestPassed` (which alone does not prove an install;
+see below), and `standard` = `TestPassed`, `TestWarning` or `BuildPLRInProgress`. The
+release-management verifier accepts those three only when the aggregate result is `Passed` and
+every scenario has a `completionTime`. A `BuildPLRInProgress` standard result is the normal push
+outcome, but it counts only when the scenario is not `(running)`.
 
 The OCP 5.0 `operator` scenario is optional while its install path is being enabled, so
 `Passed` can appear next to `operator-5-0: TestFail`. That `TestFail` is the install test
-failing to provision a cluster (the tenant is not yet an owner of the `aws-konflux-prod` cluster
-profile), not a catalog content problem; do not treat it as passing, and
+failing to provision a cluster (until openshift/release#87176 merges, the tenant is not an owner
+of the `aws-konflux-prod` cluster profile), not a catalog content problem; do not treat it as passing, and
 see the [OCP 5 rollout runbook](https://github.com/stolostron/submariner-release-management/blob/main/plans/ocp-5-0-fbc-rollout.md)
 for the gates before 5.0 is released.
 
