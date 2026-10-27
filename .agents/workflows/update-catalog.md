@@ -196,7 +196,8 @@ outcome, but it counts only when the scenario is not `(running)`.
 The OCP 5.0 `operator` scenario is optional while its install path is being enabled, so
 `Passed` can appear next to `operator-5-0: TestFail`. That `TestFail` is the install test
 failing to provision a cluster (until openshift/release#87176 merges, the tenant is not an owner
-of the `aws-konflux-prod` cluster profile), not a catalog content problem; do not treat it as passing, and
+of the `aws-konflux-prod` cluster profile, and `stable-5.0` has no releases yet), not a catalog
+content problem; do not treat it as passing, and
 see the [OCP 5 rollout runbook](https://github.com/stolostron/submariner-release-management/blob/main/plans/ocp-5-0-fbc-rollout.md)
 for the gates before 5.0 is released.
 
