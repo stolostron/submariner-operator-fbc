@@ -189,8 +189,9 @@ Expected for each: the SHA of the last commit that changed that catalog or its b
 (`.tekton`, `images-mirror-set.yaml`, `catalog.Dockerfile`; a merge that touches none leaves the
 older SHA in place), `Passed`, `operator` = `TestPassed` (which alone does not prove an install;
 see below), and `standard` = `TestPassed`, `TestWarning` or `BuildPLRInProgress`. The
-release-management verifier accepts those three only when the aggregate result is `Passed` and
-every scenario has a `completionTime`. A `BuildPLRInProgress` standard result is the normal push
+release-management verifier accepts those three statuses for every scenario, so `operator` may
+also be `TestWarning` or `BuildPLRInProgress`, but only when the aggregate result is `Passed`,
+both scenarios are present, and every scenario has a `completionTime`. A `BuildPLRInProgress` standard result is the normal push
 outcome, but it counts only when the scenario is not `(running)`.
 
 The OCP 5.0 `operator` scenario is optional while its install path is being enabled, so
