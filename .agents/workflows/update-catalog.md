@@ -156,10 +156,10 @@ For each OCP version the PR rebuilds, require:
 - All GitHub Actions checks pass.
 - `submariner-fbc-<ocp>-on-pull-request` (the Konflux build) passes.
 - `submariner-fbc-operator-<ocp>` passes.
-- `submariner-fbc-standard-<ocp>` passes or reports warnings (shown as neutral). Read the
-  report of any failure. Source-provenance violations are expected for a PR from a fork;
-  anything else, such as a missing required build task, would also fail the release, so it
-  blocks merge.
+- `submariner-fbc-standard-<ocp>`: a pass or a warning (shown as neutral) is fine. If it
+  fails, open the report. If every violation is about source provenance (normal for a PR
+  from a fork), ignore it. Any other violation, such as a missing required build task,
+  would also fail the release and blocks merge.
 
 When every check above is satisfied, merge:
 
@@ -185,14 +185,22 @@ for OCP in $(ls .tekton/submariner-fbc-*-push.yaml | sed 's/.*submariner-fbc-\(.
 done
 ```
 
-Expected for each: the SHA of the last commit that changed that catalog or its build files
-(`.tekton`, `images-mirror-set.yaml`, `catalog.Dockerfile`; a merge that touches none leaves the
-older SHA in place), `Passed`, `operator` = `TestPassed` (which alone does not prove an install;
-see below), and `standard` = `TestPassed`, `TestWarning` or `BuildPLRInProgress`. The
-release-management verifier accepts those three statuses for every scenario, so `operator` may
-also be `TestWarning` or `BuildPLRInProgress`, but only when the aggregate result is `Passed`,
-both scenarios are present, and every scenario has a `completionTime`. A `BuildPLRInProgress` standard result is the normal push
-outcome, but it counts only when the scenario is not `(running)`.
+For each catalog, the output line must show all of these:
+
+- The SHA of the last commit that changed that catalog or its build files (`.tekton`,
+  `images-mirror-set.yaml`, `catalog.Dockerfile`). A merge that touches none of them leaves the
+  older SHA in place, which is fine.
+- The aggregate result `Passed`.
+- `operator: TestPassed`. This alone does not prove an install; see below.
+- `standard: TestPassed`, `TestWarning` or `BuildPLRInProgress`.
+- No `(running)` marker on either scenario.
+
+`BuildPLRInProgress` on `standard` is the normal push outcome (observed on 2026-10-26, with a
+completion time). The release-management verifier applies the same three statuses to every
+scenario, requires both scenarios to be present and a `completionTime` on each, and requires the
+aggregate to be `Passed`. A rebuild must come from a new commit to `main`: a retest comment on a
+pushed commit gets a snapshot that is not labelled as a push event, so this check and the verifier
+skip it.
 
 The OCP 5.0 `operator` scenario is optional while its install path is being enabled, so
 `Passed` can appear next to `operator-5-0: TestFail`. That `TestFail` is the install test
