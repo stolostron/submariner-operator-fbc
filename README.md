@@ -75,12 +75,12 @@ converts quay.io URLs to registry.redhat.io, and formats YAML.
 
 ## Troubleshooting
 
-**VPN blocks `registry.redhat.io`** → Disconnect Red Hat VPN
-
 **Not logged into cluster** → Run `oc login --web https://api.kflux-prd-rh02.0fk9.p1.openshiftapps.com:6443/`
 
 **"No push-event snapshot found"** → Wait for Konflux build (`oc get snapshot $SNAPSHOT -n submariner-tenant`) or use explicit:
 `make update-bundle VERSION=0.22.1 SNAPSHOT=submariner-0-22-20260326-225632-000`
+
+**Konflux check or stage release failed** → See [update-catalog.md troubleshooting](.agents/workflows/update-catalog.md#troubleshooting)
 
 **Snapshot tests failed** → Wait for tests to pass or check status: `oc get snapshot $SNAPSHOT -n submariner-tenant -o jsonpath='{.metadata.annotations["test.appstudio.openshift.io/status"]}'`
 
