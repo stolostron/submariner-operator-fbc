@@ -65,7 +65,7 @@ entries:
     image: ${TEST_BUNDLE_QUAY_23_DEF456}
     schema: olm.bundle"
 
-  create_skopeo_mock 1
+  create_skopeo_mock 2
 
   reset_bundle_arrays
 
@@ -97,6 +97,56 @@ entries:
   cleanup_inline_catalog
 }
 
+test_failures_are_not_unreleased() {
+  local mode
+  for mode in auth network bare timeout; do
+    setup_inline_catalog "schema: olm.template.basic
+entries:
+  - name: ${TEST_BUNDLE_NAME_23_1}
+    image: ${TEST_BUNDLE_QUAY_23_DEF456}
+    schema: olm.bundle"
+
+    create_skopeo_digest_mock "${TEST_SHA_DEF456}=$mode"
+
+    reset_bundle_arrays
+
+    audit_bundle_urls >/dev/null 2>&1
+
+    assert_array_length "CONVERTIBLE_BUNDLES" "0" "$mode failure not convertible"
+    assert_array_length "UNRELEASED_BUNDLES" "0" "$mode failure not classified as unreleased"
+
+    cleanup_inline_catalog
+  done
+}
+
+test_prod_bundle_status() {
+  local spec
+  for spec in released=released absent=absent; do
+    create_skopeo_digest_mock "${TEST_SHA_DEF456}=${spec%%=*}"
+    assert_equals "${spec#*=}" "$(prod_bundle_status "$TEST_SHA_DEF456")" "${spec%%=*} digest classified"
+  done
+
+  for spec in timeout auth network bare; do
+    create_skopeo_digest_mock "${TEST_SHA_DEF456}=$spec"
+    assert_contains "inconclusive: " "$(prod_bundle_status "$TEST_SHA_DEF456")" "$spec is inconclusive"
+  done
+
+  # Both signals are required: the exit code and the message
+  cat > "${MOCK_BIN_DIR}/skopeo" <<'EOF'
+#!/bin/bash
+echo "manifest unknown" >&2
+exit 1
+EOF
+  assert_contains "inconclusive: " "$(prod_bundle_status "$TEST_SHA_DEF456")" "Message without exit 2 is inconclusive"
+
+  cat > "${MOCK_BIN_DIR}/skopeo" <<'EOF'
+#!/bin/bash
+echo "something else" >&2
+exit 2
+EOF
+  assert_contains "inconclusive: " "$(prod_bundle_status "$TEST_SHA_DEF456")" "Exit 2 without the message is inconclusive"
+}
+
 test_mixed_bundle_status() {
   setup_inline_catalog "schema: olm.template.basic
 entries:
@@ -110,17 +160,8 @@ entries:
     image: ${TEST_BUNDLE_QUAY_23_DEF456}
     schema: olm.bundle"
 
-  # Create a smart mock that returns different exit codes based on SHA
-  cat > "${MOCK_BIN_DIR}/skopeo" <<EOF
-#!/bin/bash
-# Exit 0 for abc123 SHA (v0.22.1), 1 for def456 SHA (v0.23.1)
-if echo "\$@" | grep -qF "${TEST_SHA_ABC123}"; then
-  exit 0
-else
-  exit 1
-fi
-EOF
-  chmod +x "${MOCK_BIN_DIR}/skopeo"
+  # v0.22.1 is released, v0.23.1 is not
+  create_skopeo_digest_mock "${TEST_SHA_ABC123}=released"
 
   reset_bundle_arrays
 

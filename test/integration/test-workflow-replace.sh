@@ -28,7 +28,7 @@ initialize_integration_test
 create_oc_mock "$TEST_SNAPSHOT_21_DEF456" "$TEST_BUNDLE_QUAY_21_DEF456" "$TEST_VERSION_21_3"
 
 setup_mock_bin_dir
-create_skopeo_mock 1 "submariner-bundle-$TEST_Y_STREAM_21"
+create_skopeo_mock 2 "submariner-bundle-$TEST_Y_STREAM_21"
 
 echo "Running REPLACE workflow: $TEST_VERSION_21_3 replaces $TEST_VERSION_21_2..."
 echo ""

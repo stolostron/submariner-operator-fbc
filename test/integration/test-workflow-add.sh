@@ -28,7 +28,7 @@ initialize_integration_test
 create_oc_mock "$TEST_SNAPSHOT_24_XYZ789" "$TEST_BUNDLE_QUAY_24_FEDCBA" "$TEST_VERSION_24_0"
 
 setup_mock_bin_dir
-create_skopeo_mock 1 "submariner-bundle-$TEST_Y_STREAM_24"
+create_skopeo_mock 2 "submariner-bundle-$TEST_Y_STREAM_24"
 
 echo "Running ADD workflow for new version $TEST_VERSION_24_0..."
 echo ""

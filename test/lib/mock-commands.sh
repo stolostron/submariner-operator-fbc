@@ -44,9 +44,14 @@ setup_mock_bin_dir() {
   export PATH="$MOCK_BIN_DIR:$PATH"
 }
 
+# Failures as printed by real skopeo 1.22 against registry.redhat.io
+SKOPEO_ERR_MANIFEST_UNKNOWN='level=fatal msg="reading manifest sha256:0 in registry.redhat.io/rhacm2/submariner-operator-bundle: manifest unknown"'
+SKOPEO_ERR_AUTH='level=fatal msg="unable to retrieve auth token: invalid username/password: unauthorized: Please login to the Red Hat Registry"'
+SKOPEO_ERR_NETWORK='level=fatal msg="pinging container registry registry.redhat.io: dial tcp: lookup registry.redhat.io: no such host"'
+
 # Create skopeo mock
 # Parameters:
-#   $1 = exit code for bundle checks (0 = released, 1 = unreleased)
+#   $1 = exit code for bundle checks (0 = released, 2 = manifest unknown, other = failure)
 #   $2 = optional bundle pattern to check (e.g., "submariner-bundle-0-24")
 create_skopeo_mock() {
   local exit_code="${1:-0}"
@@ -63,10 +68,12 @@ create_skopeo_mock() {
 #!/bin/bash
 if [[ "\$*" == *--format* && "\$*" == *csv-version* ]]; then echo "\$MOCK_BUNDLE_VERSION"; exit 0; fi
 if echo "\$@" | grep -qF "$bundle_pattern"; then
+  [ $exit_code -ne 2 ] || echo '$SKOPEO_ERR_MANIFEST_UNKNOWN' >&2
   exit $exit_code
 else
-  # Non-matching patterns: return 1 (image not found, consistent with real skopeo)
-  exit 1
+  # Non-matching patterns: image not found, consistent with real skopeo
+  echo '$SKOPEO_ERR_MANIFEST_UNKNOWN' >&2
+  exit 2
 fi
 EOF
   else
@@ -74,9 +81,39 @@ EOF
     cat > "$MOCK_BIN_DIR/skopeo" <<EOF
 #!/bin/bash
 if [[ "\$*" == *--format* && "\$*" == *csv-version* ]]; then echo "\$MOCK_BUNDLE_VERSION"; exit 0; fi
+[ $exit_code -ne 2 ] || echo '$SKOPEO_ERR_MANIFEST_UNKNOWN' >&2
 exit $exit_code
 EOF
   fi
+
+  chmod +x "$MOCK_BIN_DIR/skopeo"
+}
+
+# Create skopeo mock that answers per digest. Digests not listed are absent.
+# Parameters: "<sha>=<released|absent|timeout|auth|network|bare>" ...
+#   bare = exit 1 with no output
+create_skopeo_digest_mock() {
+  local spec cases=""
+  for spec in "$@"; do
+    cases+="  *\"${spec%%=*}\"*) mode=${spec#*=} ;;"$'\n'
+  done
+
+  cat > "$MOCK_BIN_DIR/skopeo" <<EOF
+#!/bin/bash
+if [[ "\$*" == *--format* && "\$*" == *csv-version* ]]; then echo "\$MOCK_BUNDLE_VERSION"; exit 0; fi
+mode=absent
+case "\$*" in
+$cases
+esac
+case "\$mode" in
+  released) exit 0 ;;
+  absent) echo '$SKOPEO_ERR_MANIFEST_UNKNOWN' >&2; exit 2 ;;
+  timeout) exit 124 ;;
+  auth) echo '$SKOPEO_ERR_AUTH' >&2; exit 1 ;;
+  network) echo '$SKOPEO_ERR_NETWORK' >&2; exit 1 ;;
+  bare) exit 1 ;;
+esac
+EOF
 
   chmod +x "$MOCK_BIN_DIR/skopeo"
 }
