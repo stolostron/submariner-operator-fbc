@@ -232,12 +232,16 @@ or if auto-conversion fails. See [update-prod-url.md](update-prod-url.md) for de
 
 The `update-bundle` script handles this automatically:
 
-- Detects your bundle's Y-stream
-- **Released bundles** → auto-converts to registry.redhat.io (mirrors not needed)
-- **Unreleased bundles from other Y-streams** → automatically removed with warning
+- Detects your bundle's Y-stream and points the mirrors only at it
+- Checks each quay.io bundle from another Y-stream at `registry.redhat.io/rhacm2/submariner-operator-bundle`:
+  - **Digest exists (released)** → converted to registry.redhat.io and kept (mirrors not needed)
+  - **`manifest unknown` (unreleased)** → removed
+  - **Anything else (timeout, auth, network)** → the run stops before changing anything (see
+    [troubleshooting](#mirror-y-stream-conflict))
 
-The cleanup is atomic: if adding a v0.22.x bundle, all unreleased v0.23.x bundles are automatically removed
-to ensure only one unreleased Y-stream exists at a time.
+Bundles often stay on quay.io until a later prod URL conversion, so a released bundle from an earlier
+release can still be on quay.io when the next one is added. Bundles in your Y-stream are never removed. If
+their check is inconclusive they stay on quay.io, which the mirrors cover.
 
 ## Troubleshooting
 
@@ -279,3 +283,6 @@ No changes staged → Verify template modified; check catalogs rebuilt
 ### Mirror Y-stream Conflict
 
 `Removing unreleased bundle from Y-stream 0-XX` → Expected behavior, no action needed (see [constraints](#mirror-file-size-limit-4096-bytes))
+
+`Cannot tell whether submariner.vX.Y.Z is released` → The registry check failed, so the script stopped
+with no changes. Run `podman login registry.redhat.io`, check VPN and network, then rerun.

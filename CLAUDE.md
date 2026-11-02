@@ -28,7 +28,8 @@ make test                                        # Run tests (~90s)
 
 **Mirror file size limit:** `.tekton/images-mirror-set.yaml` limited to 4096 bytes (Tekton task result limit).
 Only one unreleased Y-stream allowed in mirrors at a time. When adding or updating any unreleased bundle,
-the `update-bundle` script automatically removes unreleased bundles from all other Y-streams.
+the `update-bundle` script converts released bundles from other Y-streams to registry.redhat.io and removes
+the unreleased ones. It stops with an error if it can't tell which is which.
 
 **Released bundles exempt:** Bundles using registry.redhat.io URLs don't need mirrors and don't count toward the limit.
 

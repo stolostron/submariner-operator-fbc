@@ -253,7 +253,18 @@ remove_bundle() {
 }
 
 #------------------------------------------------------------------------------
-# cleanup_unreleased_ystreams - Remove unreleased bundles from other Y-streams
+# cleanup_unreleased_ystreams - Leave only the target Y-stream relying on mirrors
+#
+# Checks each quay.io bundle from another Y-stream at registry.redhat.io:
+#   released     - convert it now; it no longer needs a mirror
+#   absent       - remove it
+#   inconclusive - stop with an error before changing anything
+#
+# Target Y-stream bundles are left to audit_bundle_urls, which runs after the
+# scenario step (see main). Converting other Y-streams here is safe because the
+# scenario step only writes the target bundle's image.
+#
+# Returns: 1 on any failure. Callers run with errexit off, so they must check.
 #------------------------------------------------------------------------------
 cleanup_unreleased_ystreams() {
   local target_ystream_dash="$1"
@@ -262,38 +273,70 @@ cleanup_unreleased_ystreams() {
 
   echo "=== Cleaning Up Unreleased Y-streams ==="
 
-  local unreleased_bundles
-  unreleased_bundles=$(yq '.entries[] | select(.schema == "olm.bundle" and (.image | contains("quay.io"))) | {"name": .name, "ystream": (.image | capture("submariner-bundle-(?<ys>[0-9]+-[0-9]+)") | .ys)}' catalog-template.yaml -o json | jq -c '.')
+  local quay_bundles
+  quay_bundles=$(yq '.entries[] | select(.schema == "olm.bundle" and (.image | contains("quay.io"))) | {"name": .name, "image": .image, "ystream": (.image | capture("submariner-bundle-(?<ys>[0-9]+-[0-9]+)") | .ys)}' catalog-template.yaml -o json | jq -c '.') || {
+    echo "✗ ERROR: Failed to read quay.io bundles from catalog-template.yaml"
+    return 1
+  }
 
-  local removed_count=0
-  if [ -n "$unreleased_bundles" ]; then
+  local released=() absent=() inconclusive_count=0
+  if [ -n "$quay_bundles" ]; then
     while IFS= read -r bundle; do
       [ -z "$bundle" ] && continue
 
-      local name ystream
+      local name image ystream sha status
       name=$(echo "$bundle" | jq -r '.name')
+      image=$(echo "$bundle" | jq -r '.image')
       ystream=$(echo "$bundle" | jq -r '.ystream // ""')
 
       [ -z "$ystream" ] && { echo "⚠️  WARNING: Cannot extract Y-stream from $name"; continue; }
 
       if [ "$ystream" = "$target_ystream_dash" ]; then
-        echo "ℹ️  Keeping unreleased bundle: $name (target Y-stream)"
+        echo "ℹ️  Keeping bundle: $name (target Y-stream)"
         continue
       fi
 
-      echo "ℹ️  Removing unreleased bundle from Y-stream $ystream: $name"
-      remove_bundle "$name" "stable-${ystream//-/.}" || return 1
-      removed_count=$((removed_count + 1))
-    done <<< "$unreleased_bundles"
+      sha=$(extract_sha "$image") || sha=""
+      if [ -z "$sha" ]; then
+        status="inconclusive: no sha256 digest in $image"
+      else
+        status=$(prod_bundle_status "$sha")
+      fi
+
+      case "$status" in
+        released) released+=("$name") ;;
+        absent) absent+=("$name $ystream") ;;
+        *)
+          echo "✗ ERROR: Cannot tell whether $name is released: ${status#inconclusive: }"
+          inconclusive_count=$((inconclusive_count + 1))
+          ;;
+      esac
+    done <<< "$quay_bundles"
   fi
 
-  # Always update mirrors to target Y-stream (even if no bundles removed)
-  ensure_mirror_ystream "$target_ystream_dash"
+  if [ "$inconclusive_count" -gt 0 ]; then
+    echo "✗ ERROR: Stopped with no changes: a bundle from another Y-stream can't be kept on quay.io or safely removed."
+    echo "   Check registry.redhat.io access (podman login registry.redhat.io, VPN, network) and rerun."
+    return 1
+  fi
 
-  if [ $removed_count -gt 0 ]; then
-    echo "✓ Removed $removed_count unreleased bundle(s)"
-  else
-    echo "✓ No cleanup needed (all unreleased bundles match target Y-stream)"
+  CONVERTIBLE_BUNDLES=("${released[@]}")
+  convert_released_bundles || return 1
+
+  local entry
+  for entry in "${absent[@]}"; do
+    local ystream="${entry#* }"
+    echo "ℹ️  Removing unreleased bundle from Y-stream $ystream: ${entry% *}"
+    remove_bundle "${entry% *}" "stable-${ystream//-/.}" || return 1
+  done
+
+  # Always update mirrors to target Y-stream (even if no bundles removed)
+  ensure_mirror_ystream "$target_ystream_dash" || return 1
+
+  if [ ${#absent[@]} -gt 0 ]; then
+    echo "✓ Removed ${#absent[@]} unreleased bundle(s)"
+  elif [ ${#released[@]} -eq 0 ]; then
+    echo "✓ No cleanup needed (all quay.io bundles match target Y-stream)"
   fi
 }
 
@@ -465,7 +508,8 @@ detect_scenario() {
 #------------------------------------------------------------------------------
 # audit_bundle_urls - Check for quay.io bundles and categorize by release status
 #
-# Uses skopeo to check if each quay.io bundle exists at registry.redhat.io
+# Uses prod_bundle_status to check if each quay.io bundle exists at registry.redhat.io.
+# Inconclusive bundles go in neither array and stay on quay.io.
 # Sets global arrays for downstream processing by convert_released_bundles()
 #
 # Parameters: None
@@ -513,27 +557,25 @@ audit_bundle_urls() {
 
     # Check if bundle exists at registry.redhat.io
     local prod_image="registry.redhat.io/rhacm2/submariner-operator-bundle@sha256:$sha"
+    local status
+    status=$(prod_bundle_status "$sha")
 
-    # Use timeout to prevent registry hangs. Exit codes:
-    # - 0: image found (bundle released)
-    # - 124: timeout (indeterminate state, don't classify as unreleased)
-    # - other: image not found (bundle not yet released)
-    local exit_code=0
-    timeout 30 skopeo inspect "docker://$prod_image" >/dev/null 2>&1 || exit_code=$?
-
-    if [ $exit_code -eq 0 ]; then
-      echo "⚠️  $name: RELEASED but using quay.io URL"
-      echo "   Current:  $image"
-      echo "   Available: $prod_image"
-      CONVERTIBLE_BUNDLES+=("$name")
-    elif [ $exit_code -eq 124 ]; then
-      echo "⚠️  $name: TIMEOUT checking registry.redhat.io (network issue?)"
-      echo "   Skipping conversion - cannot verify release status"
-      # Don't add to UNRELEASED_BUNDLES - timeout is indeterminate
-    else
-      echo "ℹ️  $name: UNRELEASED (quay.io workspace URL)"
-      UNRELEASED_BUNDLES+=("$name")
-    fi
+    case "$status" in
+      released)
+        echo "⚠️  $name: RELEASED but using quay.io URL"
+        echo "   Current:  $image"
+        echo "   Available: $prod_image"
+        CONVERTIBLE_BUNDLES+=("$name")
+        ;;
+      absent)
+        echo "ℹ️  $name: UNRELEASED (quay.io workspace URL)"
+        UNRELEASED_BUNDLES+=("$name")
+        ;;
+      *)
+        echo "⚠️  $name: could not check registry.redhat.io: ${status#inconclusive: }"
+        echo "   Skipping conversion - cannot verify release status"
+        ;;
+    esac
   done <<< "$QUAY_BUNDLES"
 
   echo ""
@@ -606,11 +648,11 @@ update_template_add() {
   local bundle_name="submariner.v${VERSION}"
   local channel="stable-${YSTREAM}"
 
-  # Clean up unreleased bundles from other Y-streams first
-  # - Removes bundles from other Y-streams to enforce "one unreleased Y-stream" constraint
+  # Clean up bundles from other Y-streams first
+  # - Converts released bundles and removes unreleased ones to enforce "one unreleased Y-stream" constraint
   # - Updates .tekton/images-mirror-set.yaml to target Y-stream for quay.io mirror access
   # - Executes before bundle addition so cleanup failures don't leave partial state
-  cleanup_unreleased_ystreams "$YSTREAM_DASH"
+  cleanup_unreleased_ystreams "$YSTREAM_DASH" || return 1
 
   # Add bundle entry to catalog
   add_bundle_entry "$bundle_name" "$BUNDLE_IMAGE"
@@ -652,7 +694,7 @@ update_template_update() {
     echo "Proceeding anyway to rebuild catalogs..."
   fi
 
-  cleanup_unreleased_ystreams "$YSTREAM_DASH"
+  cleanup_unreleased_ystreams "$YSTREAM_DASH" || return 1
 
   update_bundle_image "$bundle_name" "$BUNDLE_IMAGE"
 
@@ -681,6 +723,9 @@ update_template_replace() {
   echo "Old SHA: ${old_sha:0:12}..."
   echo "New SHA: ${BUNDLE_SHA:0:12}..."
 
+  # Clean up bundles from other Y-streams first so failures don't leave partial state
+  cleanup_unreleased_ystreams "$YSTREAM_DASH" || return 1
+
   # Update bundle entry - rename and update image atomically
   echo "Updating bundle entry..."
 
@@ -690,9 +735,6 @@ update_template_replace() {
     echo "✗ ERROR: Failed to update bundle entry"
     return 1
   fi
-
-  # Clean up unreleased bundles from other Y-streams (typically no-op for REPLACE)
-  cleanup_unreleased_ystreams "$YSTREAM_DASH"
 
   echo "✓ Updated bundle entry"
 
@@ -1069,7 +1111,8 @@ main() {
   # Step 3.5: Audit bundle URLs and convert released bundles to registry.redhat.io.
   # Runs after the scenario step so that conversions are never clobbered by
   # update_template_update writing the snapshot's quay.io BUNDLE_IMAGE back over
-  # a URL that convert_released_bundles already converted.
+  # a URL that convert_released_bundles already converted. Bundles from other
+  # Y-streams were already converted or removed by cleanup_unreleased_ystreams.
   audit_bundle_urls
 
   if ! convert_released_bundles; then

@@ -22,6 +22,34 @@ extract_sha() {
 }
 
 #------------------------------------------------------------------------------
+# Registry Queries
+#------------------------------------------------------------------------------
+
+# Check whether a digest exists in the production bundle repository
+# Parameters: $1 = SHA hex string
+# Prints one of:
+#   released             - the registry returned the manifest
+#   absent               - the registry answered that it has no such manifest
+#   inconclusive: <why>  - anything else (timeout, auth, network, ...)
+# A non-zero skopeo exit alone doesn't prove absence. Skopeo exits 2 only for
+# a registry "manifest unknown" answer, and 1 for auth and network failures.
+prod_bundle_status() {
+  local output exit_code=0
+  output=$(timeout 30 skopeo inspect \
+    "docker://registry.redhat.io/rhacm2/submariner-operator-bundle@sha256:$1" 2>&1 >/dev/null) || exit_code=$?
+
+  if [ "$exit_code" -eq 0 ]; then
+    echo "released"
+  elif [ "$exit_code" -eq 2 ] && [[ "$output" == *"manifest unknown"* ]]; then
+    echo "absent"
+  elif [ "$exit_code" -eq 124 ]; then
+    echo "inconclusive: timed out after 30s"
+  else
+    echo "inconclusive: skopeo exit $exit_code: ${output##*$'\n'}"
+  fi
+}
+
+#------------------------------------------------------------------------------
 # Version Validation
 #------------------------------------------------------------------------------
 
